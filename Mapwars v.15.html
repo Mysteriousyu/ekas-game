@@ -1,0 +1,631 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MapWars — Commander's Notebook</title>
+<style>
+:root{--paper:#f6eed5;--ink:#29271f;--blue:#1764d5;--black:#202020;--water:#91bed8;--line:#c9b987}
+*{box-sizing:border-box}
+body{margin:0;background:#d8c9a5;color:var(--ink);font-family:"Trebuchet MS",Arial,sans-serif}
+header{padding:12px 18px;background:var(--paper);border-bottom:3px solid var(--ink)}
+h1{font: bold 38px Georgia,serif;letter-spacing:2px;margin:0}
+header p{margin:4px 0 0;font:italic 15px Georgia,serif}
+#turnbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;flex-wrap:wrap;gap:9px;padding:10px;background:#f6eed5f5;border-bottom:2px solid var(--ink)}
+button{font:inherit;font-weight:bold;padding:8px 12px;border:2px solid var(--ink);border-radius:4px;background:#fff8e4;cursor:pointer;box-shadow:2px 2px #0002}
+button:hover:not(:disabled){filter:brightness(.94)}
+button:disabled{opacity:.45;cursor:not-allowed}
+#endTurn{background:#202020;color:white;border:3px solid #111;padding:12px 18px;font-size:16px}
+#turnStatus{font-weight:bold;flex:1;min-width:180px}
+.score{font-weight:bold;padding:7px;border:2px solid;border-radius:4px}
+.blueScore{color:#0750b4;border-color:#1764d5;background:#dce9ff}
+.blackScore{color:#111;border-color:#111;background:#ddd}
+main{padding:12px;max-width:1800px;margin:auto}
+.panel{background:var(--paper);border:2px solid var(--ink);padding:12px;margin-bottom:12px;box-shadow:3px 3px #0002}
+h2{font: bold 23px Georgia,serif;margin:0 0 10px}
+h3{margin:10px 0 6px}
+.small{font-size:13px;opacity:.82}
+#setupGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.setupType{display:flex;align-items:center;gap:8px;background:#fff8e4;border:1px solid var(--line);padding:7px}
+.setupType .emoji{font-size:30px}
+.setupType label{flex:1;font-weight:bold}
+.setupType input{width:55px;padding:5px}
+#setupWarning{color:#9a281e;font-weight:bold;margin:8px 0}
+#deploymentTray{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}
+.deployCard{display:flex;align-items:center;gap:6px;padding:6px 9px;border:2px solid var(--blue);background:#e1eaff;border-radius:4px;cursor:grab;font-weight:bold}
+.deployCard .emoji{font-size:28px}
+.deployCard.active{outline:3px solid #e2a600}
+#layout{display:grid;grid-template-columns:minmax(0,1fr) 275px;gap:12px;align-items:start}
+#boardPanel{min-width:0}
+#boardControls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+#boardWrap{overflow:auto;max-height:72vh;min-height:300px;border:3px solid #4c422f;background:#d8cfb2}
+#board{display:grid;grid-template-columns:repeat(30,var(--cell,32px));grid-auto-rows:var(--cell,32px);width:max-content}
+.tile{width:var(--cell,32px);height:var(--cell,32px);position:relative;display:flex;align-items:center;justify-content:center;border:1px solid #645b4330;cursor:pointer;overflow:hidden}
+.tile.land{background:#e6d9b5}
+.tile.water{background:var(--water)}
+.tile.blueLand{background:#b8d2ff}
+.tile.blackLand{background:#858585}
+.tile.neutralLand{background:#e6d9b5}
+.tile.capital{outline:3px double #ad3823;outline-offset:-4px}
+.tile.selected{box-shadow:inset 0 0 0 4px #ffb300;z-index:2}
+.tile.target{box-shadow:inset 0 0 0 3px #40a449}
+.tile.enemyTarget{box-shadow:inset 0 0 0 3px #d43a2f}
+.tile.dragOver{background:#ffe58b!important}
+.unitEmoji{font-size:calc(var(--cell,32px)*.76);line-height:1;z-index:2;filter:drop-shadow(1px 1px 0 white)}
+.ownerMark{position:absolute;bottom:0;right:1px;font-size:9px;font-weight:bold;background:#fff9;z-index:3}
+.capitalMark{position:absolute;top:0;left:1px;font-size:10px;z-index:3}
+#sidePanel{position:sticky;top:76px}
+#selectedInfo{min-height:70px;background:#fff8e4;border:1px dashed #a99767;padding:8px}
+.statLine{display:flex;justify-content:space-between;gap:8px;margin:7px 0}
+#buyType{width:100%;padding:8px;margin:6px 0;background:#fff8e4}
+#eventLog{height:180px;overflow:auto;background:#fff8e4;border:1px solid var(--line);padding:7px;font-size:13px;line-height:1.4}
+.logEntry{border-bottom:1px dotted var(--line);padding:3px 0}
+#message{padding:10px;background:#fff3c8;border:2px dashed #9b7d31;margin-bottom:12px;font-weight:bold}
+.hidden{display:none!important}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;margin-top:8px}
+#victoryOverlay{position:fixed;inset:0;background:#000b;z-index:30;display:flex;align-items:center;justify-content:center;padding:20px}
+#victoryBox{background:var(--paper);border:4px solid var(--ink);padding:25px;text-align:center;max-width:480px;width:100%}
+#victoryBox h2{font-size:34px}
+@media(max-width:850px){#layout{grid-template-columns:1fr}#sidePanel{position:static}#boardWrap{max-height:60vh}}
+@media(max-width:500px){main{padding:6px}#endTurn{width:100%}}
+</style>
+</head>
+<body>
+<header>
+<h1>⚔ MAPWARS</h1>
+<p>Field notebook · Campaign record · Commander's edition</p>
+</header>
+
+<div id="turnbar">
+ <div id="turnStatus">SETUP PHASE — Assemble your army</div>
+ <div class="score blueScore">🔵 Blue: <span id="blueScore">0</span> pts</div>
+ <div class="score blackScore">⚫ Black: <span id="blackScore">0</span> pts</div>
+ <button id="endTurn" disabled>END TURN → BLACK AI</button>
+</div>
+
+<main>
+<div id="message">Commander, assemble your force. Deploy ships on blue-controlled water and land units on blue land.</div>
+
+<section id="setupPanel" class="panel">
+<h2>📓 Army Selection & Deployment</h2>
+<p class="small">Choose 5–20 starting units. Anti-air is allowed at setup but cannot be bought or moved during battle. Maximum two ships and transport boats combined.</p>
+<div id="setupGrid"></div>
+<div id="setupSummary">Army size: 0 / 20</div>
+<div id="setupWarning"></div>
+<button id="createArmy">CREATE ARMY & DEPLOY →</button>
+<button id="randomArmy">QUICK ARMY</button>
+<div id="deploymentArea" class="hidden">
+<h3>Drag units onto legal blue territory</h3>
+<p class="small">Land units go on blue land. Warships and transports go on blue water along your coast. Click a card, then a square, if you prefer.</p>
+<div id="deploymentTray"></div>
+<div id="deploymentCount"></div>
+<button id="startBattle" disabled>START BATTLE →</button>
+</div>
+</section>
+
+<div id="layout">
+<section id="boardPanel" class="panel">
+<h2>🗺 The Battlefield</h2>
+<div id="boardControls">
+<button id="zoomOut">− Zoom</button>
+<input id="zoom" type="range" min="20" max="48" value="32" aria-label="Board zoom">
+<button id="zoomIn">+ Zoom</button>
+<button id="clearSelection">Deselect</button>
+</div>
+<div id="boardWrap"><div id="board"></div></div>
+<div class="legend">
+<span>🔵 Blue homeland</span><span>⚫ Black homeland</span><span>🌊 Water</span>
+<span>⭐ Capital</span><span>🟡 Selected unit</span>
+</div>
+</section>
+
+<aside id="sidePanel">
+<section class="panel">
+<h2>📋 Field Report</h2>
+<div class="statLine"><span>Phase</span><b id="phaseInfo">Setup</b></div>
+<div class="statLine"><span>Army movement</span><b id="moveInfo">Unused</b></div>
+<div class="statLine"><span>Army attack</span><b id="attackInfo">Unused</b></div>
+<div class="statLine"><span>Reinforcement</span><b id="buyInfo">Available</b></div>
+<div class="statLine"><span>Blue units</span><b id="blueUnits">0</b></div>
+<div class="statLine"><span>Black units</span><b id="blackUnits">0</b></div>
+<h3>Selected unit</h3>
+<div id="selectedInfo">Select a unit to inspect it.</div>
+<h3>Reinforcements</h3>
+<p class="small">Buy at most one unit per turn. Capturing a capital permanently disables reinforcements for that side.</p>
+<select id="buyType">
+<option value="inf">🪖 Infantry — 1 point</option>
+<option value="tank">🛡️ Tank — 3 points</option>
+<option value="air">✈️ Aircraft — 3 points</option>
+<option value="ship">🚢 Warship — 3 points</option>
+<option value="heli">🚁 Helicopter — 4 points</option>
+<option value="transport">⛴️ Transport boat — 3 points</option>
+</select>
+<button id="buyButton">BUY REINFORCEMENT</button>
+<p class="small">Anti-air cannot be purchased.</p>
+</section>
+<section class="panel">
+<h2>📜 Battle Log</h2>
+<div id="eventLog"></div>
+</section>
+</aside>
+</div>
+</main>
+
+<div id="victoryOverlay" class="hidden">
+<div id="victoryBox">
+<h2 id="victoryTitle">VICTORY!</h2>
+<p id="victoryText"></p>
+<button id="closeVictory">Return to battlefield</button>
+</div>
+</div>
+
+<script>
+"use strict";
+const W=30,H=30;
+const TYPES={
+ inf:{name:"Infantry",emoji:"🪖",cost:1,kind:"land"},
+ tank:{name:"Tank",emoji:"🛡️",cost:3,kind:"land"},
+ aa:{name:"Anti-air",emoji:"🎯",cost:null,kind:"land"},
+ air:{name:"Aircraft",emoji:"✈️",cost:3,kind:"air"},
+ heli:{name:"Helicopter",emoji:"🚁",cost:4,kind:"air"},
+ ship:{name:"Warship",emoji:"🚢",cost:3,kind:"sea"},
+ transport:{name:"Transport boat",emoji:"⛴️",cost:3,kind:"sea"}
+};
+const LAND_NAMES=["Aster","Bramble","Cobalt","Dunmere","Eldoria","Frostvale","Goldreach","Highmere","Ironwood","Juniper"];
+let tiles=[],units=[],nextId=1,side="blue",phase="setup",selected=null;
+let blueScore=0,blackScore=0,blueMoved=false,blueAttacked=false,blackMoved=false,blackAttacked=false;
+let blueBought=false,blackBought=false,blueReinforcements=true,blackReinforcements=true;
+let chosenDeploy=null,deployQueue=[],setupCounts={},territoryNames=[];
+let dragUnitId=null,dragDeployType=null,gameOver=false;
+const $=id=>document.getElementById(id);
+const board=$("board");
+const key=(x,y)=>y*W+x;
+const inside=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
+const tileAt=(x,y)=>inside(x,y)?tiles[key(x,y)]:null;
+const unitAt=(x,y,ignoreId=null)=>units.find(u=>u.id!==ignoreId&&u.x===x&&u.y===y&&!u.loadedBy);
+const dist=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+const naval=t=>TYPES[t].kind==="sea";
+const aircraft=t=>TYPES[t].kind==="air";
+const friendlyOwner=s=>s==="blue"?"blue":"black";
+
+function log(text){
+ const e=document.createElement("div");e.className="logEntry";e.textContent=text;
+ $("eventLog").prepend(e);
+}
+function notify(text){$("message").textContent=text}
+function unitLabel(u){return TYPES[u.type].emoji+" "+TYPES[u.type].name}
+function countUnits(s){return units.filter(u=>u.side===s&&!u.loadedBy).length}
+function landUnitCount(s){return units.filter(u=>u.side===s&&!naval(u.type)&&!u.loadedBy).length}
+function getTileOwner(t){return t.owner}
+function canUseTile(type,t,owner){
+ if(!t)return false;
+ if(owner==="blue"&&t.owner!=="blue")return false;
+ if(owner==="black"&&t.owner!=="black")return false;
+ if(naval(type))return t.terrain==="water";
+ if(aircraft(type))return t.terrain!=="water"&&t.owner===owner;
+ return t.terrain==="land"&&t.owner===owner;
+}
+function initMap(){
+ tiles=[];units=[];nextId=1;territoryNames=[];
+ // The outer columns are coastal water. Blue and black have separate
+ // home seas, so naval deployment is possible from the first battle turn.
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  let terrain="land",owner="neutral";
+  if(x===0||x===W-1)terrain="water";
+  if(x>=1&&x<=8)owner="blue";
+  else if(x>=21&&x<=28)owner="black";
+  if(terrain==="water")owner=x<15?"blue":"black";
+  // A broad neutral centre, with a few lakes and a central river.
+  if(x>=9&&x<=20)owner="neutral";
+  if(x===14||x===15){
+   if(y>3&&y<26&&y%7!==0)terrain="water";
+  }
+  // Preserve a clear land route across the battlefield.
+  if((x===14||x===15)&&y%7===0)terrain="land";
+  // Two protected rear capitals.
+  const capital=(x===3&&y===15)||(x===26&&y===15);
+  tiles.push({x,y,terrain,owner,capital,claimed:false,name:""});
+ }
+ // Ensure home coast water is connected and usable.
+ for(let y=10;y<=20;y++){
+  tileAt(0,y).terrain="water";tileAt(29,y).terrain="water";
+  tileAt(0,y).owner="blue";tileAt(29,y).owner="black";
+ }
+ // Name connected land areas with stable labels for this map.
+ let seen=new Set(),n=0;
+ for(const t of tiles){
+  if(t.terrain!=="land"||seen.has(key(t.x,t.y)))continue;
+  const stack=[t],component=[];
+  seen.add(key(t.x,t.y));
+  while(stack.length){
+   const cur=stack.pop();component.push(cur);
+   for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+    const q=tileAt(cur.x+dx,cur.y+dy);
+    if(q&&q.terrain==="land"&&!seen.has(key(q.x,q.y))){
+     seen.add(key(q.x,q.y));stack.push(q);
+    }
+   }
+  }
+  const name=LAND_NAMES[n]||("Frontier "+(n+1));
+  n++;
+  component.forEach(t=>t.name=name);
+ }
+ renderBoard();
+}
+function renderBoard(){
+ board.innerHTML="";
+ for(const t of tiles){
+  const el=document.createElement("div");
+  el.className="tile "+(t.terrain==="water"?"water":t.owner==="blue"?"blueLand":t.owner==="black"?"blackLand":"neutralLand");
+  if(t.capital)el.classList.add("capital");
+  el.dataset.x=t.x;el.dataset.y=t.y;el.tabIndex=0;
+  el.title=`${t.name||"Sea"} · ${t.owner} · ${t.terrain}${t.capital?" · CAPITAL":""}`;
+  if(t.capital){const c=document.createElement("span");c.className="capitalMark";c.textContent="★";el.append(c)}
+  const u=unitAt(t.x,t.y);
+  if(u){const em=document.createElement("span");em.className="unitEmoji";em.textContent=TYPES[u.type].emoji;el.append(em)}
+  if(t.terrain==="land"){
+   const mark=document.createElement("span");mark.className="ownerMark";
+   mark.textContent=t.owner==="blue"?"B":t.owner==="black"?"K":"·";el.append(mark);
+  }
+  if(selected&&selected.x===t.x&&selected.y===t.y)el.classList.add("selected");
+  if(selected&&selected.side===side&&phase==="battle"&&!sideMoved()&&canMove(selected,t.x,t.y))el.classList.add("target");
+  if(selected&&selected.side===side&&phase==="battle"&&!sideAttacked()){
+   const target=unitAt(t.x,t.y);
+   if(target&&target.side!==side&&dist(selected,target)===1)el.classList.add("enemyTarget");
+  }
+  el.addEventListener("click",()=>handleTileClick(t.x,t.y));
+  el.addEventListener("dragover",e=>{
+   if(phase!=="battle"||side!=="blue")return;
+   if(dragUnitId!==null||dragDeployType){e.preventDefault();el.classList.add("dragOver")}
+  });
+  el.addEventListener("dragleave",()=>el.classList.remove("dragOver"));
+  el.addEventListener("drop",e=>{
+   e.preventDefault();el.classList.remove("dragOver");
+   if(phase==="deploy"&&dragDeployType){deployUnit(dragDeployType,t.x,t.y);dragDeployType=null;return}
+   if(phase==="battle"&&dragUnitId!==null){
+    const u=units.find(v=>v.id===dragUnitId);dragUnitId=null;
+    if(u&&u.side===side){selected=u;performMoveOrAttack(u,t.x,t.y)}
+   }
+  });
+  if(u&&phase==="battle"&&u.side===side){
+   el.draggable=true;
+   el.addEventListener("dragstart",e=>{
+    if(u.type==="aa"||sideMoved()||side!=="blue"){e.preventDefault();return}
+    dragUnitId=u.id;e.dataTransfer.setData("text/plain",String(u.id));
+   });
+  }
+  board.append(el);
+ }
+ updateUI();
+}
+function sideMoved(){return side==="blue"?blueMoved:blackMoved}
+function sideAttacked(){return side==="blue"?blueAttacked:blackAttacked}
+function setMoved(){if(side==="blue")blueMoved=true;else blackMoved=true}
+function setAttacked(){if(side==="blue")blueAttacked=true;else blackAttacked=true}
+function addUnit(type,s,x,y){
+ const u={id:nextId++,type,side:s,x,y,loadedBy:null,passenger:null};
+ units.push(u);return u;
+}
+function removeUnit(u,reward=true){
+ if(!u)return;
+ if(u.loadedBy){
+  const carrier=units.find(v=>v.id===u.loadedBy);
+  if(carrier)carrier.passenger=null;
+ }
+ if(u.passenger){
+  const p=units.find(v=>v.id===u.passenger);
+  if(p){p.loadedBy=null;p.x=u.x;p.y=u.y}
+ }
+ if(reward&&u.side==="black"&&side==="blue"){blueScore+=3;log("Blue earns +3 points for destroying an enemy unit.")}
+ if(reward&&u.side==="blue"&&side==="black"){blackScore+=3;log("Black earns +3 points for destroying a Blue unit.")}
+ units=units.filter(v=>v.id!==u.id);
+ if(selected&&selected.id===u.id)selected=null;
+}
+function setOwner(t,s){
+ if(!t||t.terrain!=="land")return;
+ if(t.capital&&t.claimed)return;
+ const old=t.owner;
+ if(old!==s){
+  if(s==="blue")blueScore+=old==="neutral"?1:2;
+  if(s==="black")blackScore+=old==="neutral"?1:2;
+  t.owner=s;
+  log((s==="blue"?"Blue":"Black")+" captures "+(t.name||"territory")+" ("+(old==="neutral"?"+1":old===s?"+0":"+2")+" points).");
+  if(t.capital&&!t.claimed){
+   t.claimed=true;
+   if(s==="blue")blackReinforcements=false;
+   else blueReinforcements=false;
+   log("CAPITAL CAPTURED! "+(s==="blue"?"Black":"Blue")+" can no longer buy reinforcements.");
+  }
+ }
+}
+function canMove(u,x,y){
+ const t=tileAt(x,y);
+ if(!u||!t||u.type==="aa"||sideMoved()||u.side!==side)return false;
+ if(u.x===x&&u.y===y)return false;
+ if(unitAt(x,y,u.id))return false;
+ if(aircraft(u.type))return true;
+ if(naval(u.type))return t.terrain==="water"&&dist(u,{x,y})===1;
+ return t.terrain==="land"&&dist(u,{x,y})===1;
+}
+function moveUnit(u,x,y){
+ const t=tileAt(x,y);
+ if(!canMove(u,x,y))return false;
+ const from={x:u.x,y:u.y};
+ u.x=x;u.y=y;setMoved();
+ if(u.type==="transport"&&u.passenger){
+  const p=units.find(v=>v.id===u.passenger);
+  if(p){p.x=x;p.y=y}
+ }
+ if(t.terrain==="land")setOwner(t,u.side);
+ log(unitLabel(u)+" moves to "+(t.name||"sea")+".");
+ selected=u;renderBoard();checkVictory();return true;
+}
+function attack(u,target){
+ if(!u||!target||u.side!==side||target.side===side||sideAttacked())return false;
+ if(u.type==="aa"){notify("Anti-air is defensive only and cannot attack.");return false}
+ if(dist(u,target)!==1){notify("Attacks must be against an adjacent enemy unit.");return false}
+ if(u.type==="transport"||u.type==="ship"){
+  // Naval units can fight only on water.
+  if(tileAt(target.x,target.y).terrain!=="water"){notify("Naval units attack only on water.");return false}
+ }
+ setAttacked();
+ if(target.type==="aa"&&aircraft(u.type)){
+  if(Math.random()<0.70){
+   log("Anti-air shoots down the attacking aircraft! (70% chance)");
+   removeUnit(u,false);selected=null;renderBoard();checkVictory();return true;
+  }else{
+   log("Aircraft survives the anti-air fire and destroys the anti-air unit!");
+   removeUnit(target,true);
+   const t=tileAt(target.x,target.y);
+   u.x=target.x;u.y=target.y;
+   if(t.terrain==="land")setOwner(t,u.side);
+   selected=u;renderBoard();checkVictory();return true;
+  }
+ }
+ log(unitLabel(u)+" attacks and destroys "+unitLabel(target)+".");
+ const x=target.x,y=target.y;
+ removeUnit(target,true);
+ u.x=x;u.y=y;
+ const t=tileAt(x,y);if(t&&t.terrain==="land")setOwner(t,u.side);
+ selected=u;renderBoard();checkVictory();return true;
+}
+function performMoveOrAttack(u,x,y){
+ const t=tileAt(x,y),target=unitAt(x,y);
+ if(target&&target.side!==u.side){attack(u,target);return}
+ if(target&&target.side===u.side){
+  selected=target;renderBoard();return;
+ }
+ if(canMove(u,x,y))moveUnit(u,x,y);
+ else notify(u.type==="aa"?"Anti-air is stationary and cannot move.":"That square is not a legal destination.");
+}
+function handleTileClick(x,y){
+ if(phase==="deploy"){if(chosenDeploy)deployUnit(chosenDeploy,x,y);return}
+ if(phase!=="battle"||side!=="blue"||gameOver)return;
+ const u=unitAt(x,y);
+ if(selected&&selected.side===side){
+  if(u&&u.id===selected.id){selected=null;renderBoard();return}
+  if(u&&u.side===side){selected=u;renderBoard();return}
+  performMoveOrAttack(selected,x,y);return;
+ }
+ if(u&&u.side===side){selected=u;renderBoard()}
+ else if(u&&u.side!==side)notify("Select one of your units first, then attack an adjacent enemy.");
+}
+function buildSetup(){
+ const grid=$("setupGrid");grid.innerHTML="";
+ for(const [type,data] of Object.entries(TYPES)){
+  const row=document.createElement("div");row.className="setupType";
+  row.innerHTML=`<span class="emoji">${data.emoji}</span><label for="count_${type}">${data.name}</label><input id="count_${type}" type="number" min="0" max="20" value="${type==="inf"?5:0}">`;
+  grid.append(row);
+  row.querySelector("input").addEventListener("input",updateSetupSummary);
+ }
+ updateSetupSummary();
+}
+function readSetup(){
+ const out={};for(const type of Object.keys(TYPES))out[type]=Math.max(0,Math.min(20,Number($("count_"+type).value)||0));
+ return out;
+}
+function updateSetupSummary(){
+ setupCounts=readSetup();
+ const total=Object.values(setupCounts).reduce((a,b)=>a+b,0);
+ const boats=setupCounts.ship+setupCounts.transport;
+ $("setupSummary").textContent=`Army size: ${total} / 20 · Naval units: ${boats} / 2`;
+ $("setupWarning").textContent=total<5||total>20?"Choose between 5 and 20 units.":boats>2?"You may start with no more than two warships and transport boats combined.":"";
+ $("createArmy").disabled=total<5||total>20||boats>2;
+}
+function quickArmy(){
+ for(const t of Object.keys(TYPES))$("count_"+t).value=0;
+ $("count_inf").value=6;$("count_tank").value=2;$("count_air").value=1;$("count_aa").value=1;
+ updateSetupSummary();
+}
+function createArmy(){
+ updateSetupSummary();if($("createArmy").disabled)return;
+ setupCounts=readSetup();deployQueue=[];
+ for(const [type,n] of Object.entries(setupCounts))for(let i=0;i<n;i++)deployQueue.push(type);
+ // Deployment is deliberately manual.
+ units=[];selected=null;nextId=1;phase="deploy";
+ $("deploymentArea").classList.remove("hidden");
+ $("createArmy").disabled=true;$("randomArmy").disabled=true;
+ $("deploymentTray").innerHTML="";
+ deployQueue.forEach((type,i)=>{
+  const card=document.createElement("div");card.className="deployCard";card.draggable=true;
+  card.innerHTML=`<span class="emoji">${TYPES[type].emoji}</span><span>${TYPES[type].name}</span>`;
+  card.addEventListener("click",()=>{chosenDeploy=type;document.querySelectorAll(".deployCard").forEach(c=>c.classList.remove("active"));card.classList.add("active");notify("Selected "+TYPES[type].name+". Click a legal deployment square.")});
+  card.addEventListener("dragstart",e=>{dragDeployType=type;e.dataTransfer.setData("text/plain",type)});
+  $("deploymentTray").append(card);
+ });
+ $("deploymentCount").textContent=`Units left to deploy: ${deployQueue.length}`;
+ $("startBattle").disabled=true;
+ $("phaseInfo").textContent="Deployment";
+ notify("Deploy all units manually. Naval units must go on blue water.");
+ renderBoard();
+}
+function deployUnit(type,x,y){
+ if(phase!=="deploy"||!deployQueue.includes(type))return;
+ const t=tileAt(x,y);
+ if(!t||unitAt(x,y)){notify("That square is occupied or invalid.");return}
+ if(!canUseTile(type,t,"blue")){
+  notify(naval(type)?"Boats and warships must deploy on blue-controlled WATER.":"This unit must deploy on blue-owned land.");
+  return;
+ }
+ addUnit(type,"blue",x,y);
+ const idx=deployQueue.indexOf(type);deployQueue.splice(idx,1);
+ const card=[...$("deploymentTray").children].find(c=>c.querySelector("span:nth-child(2)")?.textContent===TYPES[type].name);
+ if(card)card.remove();
+ chosenDeploy=null;dragDeployType=null;
+ $("deploymentCount").textContent=`Units left to deploy: ${deployQueue.length}`;
+ $("startBattle").disabled=deployQueue.length!==0;
+ notify(deployQueue.length?"Unit deployed. Choose the next unit.":"All units deployed. Begin the battle when ready.");
+ renderBoard();
+}
+function startBattle(){
+ if(phase!=="deploy"||deployQueue.length)return;
+ phase="battle";side="blue";selected=null;
+ blueMoved=blueAttacked=blackMoved=blackAttacked=false;
+ blueBought=blackBought=false;gameOver=false;
+ // AI setup: land army plus a couple of coastal units.
+ const aiTypes=["inf","inf","inf","tank","tank","aa","air","heli","inf","inf"];
+ const positions=[];
+ for(let y=8;y<=22;y++)for(let x=21;x<=28;x++)if(tileAt(x,y).terrain==="land")positions.push([x,y]);
+ for(const type of aiTypes){
+  const i=positions.findIndex(([x,y])=>!unitAt(x,y));
+  if(i>=0){const [x,y]=positions.splice(i,1)[0];addUnit(type,"black",x,y)}
+ }
+ // AI naval units begin on its coastal sea.
+ for(const type of ["ship","transport"]){
+  const spots=[];for(let y=10;y<=20;y++)spots.push([29,y]);
+  const p=spots.find(([x,y])=>!unitAt(x,y));
+  if(p)addUnit(type,"black",p[0],p[1]);
+ }
+ $("setupPanel").classList.add("hidden");
+ $("endTurn").disabled=false;
+ $("phaseInfo").textContent="Battle";
+ notify("Battle begins! Move once and attack once with your army. Anti-air cannot move.");
+ log("Battle begins. Blue commands first.");
+ renderBoard();checkVictory();
+}
+function endPlayerTurn(){
+ if(phase!=="battle"||side!=="blue"||gameOver)return;
+ side="black";selected=null;renderBoard();
+ notify("Black AI is taking its turn...");
+ $("endTurn").disabled=true;
+ setTimeout(aiTurn,350);
+}
+function aiTurn(){
+ if(gameOver)return;
+ // Intentionally simple AI: choose a nearby target, then make at most
+ // one move and one attack for the whole army.
+ const enemies=units.filter(u=>u.side==="blue");
+ const own=units.filter(u=>u.side==="black");
+ if(!own.length||!enemies.length){checkVictory();return}
+ let didAttack=false;
+ for(const u of own){
+  if(u.type==="aa")continue;
+  const target=enemies.find(e=>dist(u,e)===1);
+  if(target){
+   if(target.type==="aa"&&aircraft(u.type)&&Math.random()<0.70){
+    removeUnit(u,false);log("Blue anti-air shoots down a Black aircraft.");didAttack=true;
+   }else{
+    removeUnit(target,true);log("Black attacks and destroys a Blue unit.");
+    if(u.type==="air"&&target.type==="aa")log("Black aircraft survives and destroys anti-air.");
+    didAttack=true;
+   }
+   break;
+  }
+ }
+ if(didAttack)blackAttacked=true;
+ // Weak AI moves toward the closest blue unit if it has not moved.
+ if(!blackMoved){
+  const candidates=units.filter(u=>u.side==="black"&&u.type!=="aa"&&!u.loadedBy);
+  let best=null,bestDist=Infinity,bestPos=null;
+  for(const u of candidates){
+   let nearest=null,nd=Infinity;
+   for(const e of units.filter(v=>v.side==="blue")){
+    const d=dist(u,e);if(d<nd){nd=d;nearest=e}
+   }
+   if(!nearest)continue;
+   const options=[[u.x+1,u.y],[u.x-1,u.y],[u.x,u.y+1],[u.x,u.y-1]];
+   for(const [x,y] of options){
+    const t=tileAt(x,y);
+    if(!t||unitAt(x,y,u.id))continue;
+    const valid=aircraft(u.type)?t.terrain==="land":naval(u.type)?t.terrain==="water":t.terrain==="land";
+    if(!valid)continue;
+    const d=Math.abs(x-nearest.x)+Math.abs(y-nearest.y);
+    if(d<bestDist){bestDist=d;best=u;bestPos=[x,y]}
+   }
+  }
+  if(best&&bestPos){
+   best.x=bestPos[0];best.y=bestPos[1];blackMoved=true;
+   const t=tileAt(best.x,best.y);if(t.terrain==="land")setOwner(t,"black");
+   log("Black repositions "+unitLabel(best)+".");
+  }
+ }
+ side="blue";selected=null;
+ blueMoved=blueAttacked=false;
+ blueBought=false;
+ $("endTurn").disabled=false;
+ notify("Your turn, Commander. One army move and one army attack are available.");
+ renderBoard();checkVictory();
+}
+function buyReinforcement(){
+ if(phase!=="battle"||side!=="blue"||gameOver)return;
+ if(blueBought){notify("You have already bought a reinforcement this turn.");return}
+ if(!blueReinforcements){notify("Your capital has fallen. Blue reinforcements are permanently disabled.");return}
+ const type=$("buyType").value,data=TYPES[type];
+ if(data.cost==null){notify("Anti-air cannot be purchased.");return}
+ if(blueScore<data.cost){notify("Not enough points for that reinforcement.");return}
+ // Land reinforcements appear on an empty blue-owned land tile;
+ // naval reinforcements appear on empty blue-controlled coastal water.
+ let pos=null;
+ for(const t of tiles){
+  if(unitAt(t.x,t.y))continue;
+  if(canUseTile(type,t,"blue")){pos=t;break}
+ }
+ if(!pos){notify(naval(type)?"No empty blue-controlled water square is available.":"No empty blue land square is available.");return}
+ blueScore-=data.cost;addUnit(type,"blue",pos.x,pos.y);blueBought=true;
+ log("Blue buys "+unitLabel(units[units.length-1])+" for "+data.cost+" points.");
+ notify("Reinforcement deployed. You may still move and attack this turn.");
+ renderBoard();
+}
+function checkVictory(){
+ $("blueScore").textContent=blueScore;$("blackScore").textContent=blackScore;
+ $("blueUnits").textContent=countUnits("blue");$("blackUnits").textContent=countUnits("black");
+ const blackLand=tiles.some(t=>t.owner==="black"&&t.terrain==="land");
+ const blueLand=tiles.some(t=>t.owner==="blue"&&t.terrain==="land");
+ const blueAlive=units.some(u=>u.side==="blue"),blackAlive=units.some(u=>u.side==="black");
+ // Victory requires both elimination of the enemy army and capture of
+ // every enemy-owned territory. A capital capture alone never wins.
+ if(!blackAlive&&!blackLand)finish("BLUE VICTORY!","The Black army is eliminated and every Black territory has been captured.");
+ else if(!blueAlive&&!blueLand)finish("BLACK VICTORY","Blue is eliminated and every Blue territory has been captured.");
+}
+function finish(title,text){
+ if(gameOver)return;gameOver=true;$("victoryTitle").textContent=title;$("victoryText").textContent=text;
+ $("victoryOverlay").classList.remove("hidden");$("endTurn").disabled=true;
+}
+function updateUI(){
+ $("blueScore").textContent=blueScore;$("blackScore").textContent=blackScore;
+ $("blueUnits").textContent=countUnits("blue");$("blackUnits").textContent=countUnits("black");
+ $("turnStatus").textContent=phase==="setup"?"SETUP PHASE — Assemble your army":phase==="deploy"?"DEPLOYMENT — Place every unit":"YOUR TURN: BLUE — COMMAND THE FRONT";
+ $("moveInfo").textContent=phase!=="battle"?"—":blueMoved?"Used":"Available";
+ $("attackInfo").textContent=phase!=="battle"?"—":blueAttacked?"Used":"Available";
+ $("buyInfo").textContent=phase!=="battle"?"—":blueBought?"Used":blueReinforcements?"Available": "Disabled";
+ $("buyButton").disabled=phase!=="battle"||side!=="blue"||blueBought||!blueReinforcements||gameOver;
+ if(selected){
+  const u=selected;
+  $("selectedInfo").innerHTML=`<b>${TYPES[u.type].emoji} ${TYPES[u.type].name}</b><br>Side: ${u.side==="blue"?"🔵 Blue":"⚫ Black"}<br>Location: ${u.x+1}, ${u.y+1}<br>${u.type==="aa"?"Stationary defensive unit":naval(u.type)?"Naval unit":aircraft(u.type)?"Aircraft":"Land unit"}`;
+ }else $("selectedInfo").textContent="Select a unit to inspect it.";
+}
+$("endTurn").addEventListener("click",endPlayerTurn);
+$("createArmy").addEventListener("click",createArmy);
+$("randomArmy").addEventListener("click",quickArmy);
+$("startBattle").addEventListener("click",startBattle);
+$("buyButton").addEventListener("click",buyReinforcement);
+$("clearSelection").addEventListener("click",()=>{selected=null;renderBoard()});
+$("zoom").addEventListener("input",e=>{board.style.setProperty("--cell",e.target.value+"px")});
+$("zoomIn").addEventListener("click",()=>{$("zoom").value=Math.min(48,Number($("zoom").value)+3);board.style.setProperty("--cell",$("zoom").value+"px")});
+$("zoomOut").addEventListener("click",()=>{$("zoom").value=Math.max(20,Number($("zoom").value)-3);board.style.setProperty("--cell",$("zoom").value+"px")});
+$("closeVictory").addEventListener("click",()=>$("victoryOverlay").classList.add("hidden"));
+buildSetup();initMap();log("Map generated. Blue capital is safely behind the front line; Black capital is in its rear.");
+</script>
+</body>
+</html>
