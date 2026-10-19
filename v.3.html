@@ -1,0 +1,3412 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dead Men Walking — Prototype 0.4</title>
+
+    <style>
+        :root {
+            --bg: #10151b;
+            --panel: #1a232d;
+            --panel2: #222e3a;
+            --line: #354655;
+            --text: #e8eef4;
+            --muted: #98a9b8;
+            --accent: #8cbf73;
+            --danger: #e46d68;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        button {
+            border: 1px solid #485b6c;
+            background: #263644;
+            color: var(--text);
+            padding: 9px 12px;
+            border-radius: 7px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #34495a;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        button.primary {
+            background: #547c46;
+        }
+
+        button.active {
+            outline: 2px solid var(--accent);
+            background: #354d37;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 14px 20px;
+            background: #151d25;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 43px;
+            height: 43px;
+            display: grid;
+            place-items: center;
+            background: #293947;
+            border: 1px solid #4c6576;
+            border-radius: 10px;
+            font-size: 25px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(17px, 2.5vw, 25px);
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .subtitle,
+        .small,
+        .eyebrow {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .subtitle {
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .clock-box {
+            border: 1px solid var(--line);
+            background: var(--panel);
+            border-radius: 8px;
+            padding: 8px 12px;
+            min-width: 94px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .clock-box strong {
+            display: block;
+            font-size: 16px;
+        }
+
+        #game-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 300px;
+            gap: 14px;
+            padding: 14px;
+            max-width: 1800px;
+            margin: auto;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 13px;
+            min-width: 0;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        #canvas-wrap {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid #435362;
+            background: #29362b;
+        }
+
+        #game {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 3 / 2;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        #hud-top {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .hud-chip {
+            background: #111820e8;
+            border: 1px solid #465768;
+            border-radius: 6px;
+            padding: 7px 9px;
+            font-size: 11px;
+        }
+
+        #weapon-hud {
+            color: #c9e7ba;
+        }
+
+        #game-message {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10151bea;
+            border: 1px solid #455667;
+            border-radius: 7px;
+            padding: 9px 13px;
+            font-size: 12px;
+            text-align: center;
+            max-width: 90%;
+            pointer-events: none;
+        }
+
+        #error-box {
+            display: none;
+            position: absolute;
+            inset: 12px;
+            z-index: 5;
+            align-items: center;
+            justify-content: center;
+            background: #180d0df2;
+            border: 1px solid #d75f5f;
+            border-radius: 8px;
+            padding: 18px;
+            color: #ffd8d8;
+            white-space: pre-wrap;
+            overflow: auto;
+            font: 12px/1.6 monospace;
+        }
+
+        #side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stat {
+            margin: 11px 0;
+        }
+
+        .stat-head {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .bar {
+            height: 8px;
+            background: #0f151b;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.2s;
+        }
+
+        .health {
+            background: #db655f;
+        }
+
+        .hunger {
+            background: #d9a653;
+        }
+
+        .thirst {
+            background: #58a9d1;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px;
+            margin-top: 12px;
+        }
+
+        .status-cell {
+            background: var(--panel2);
+            border: 1px solid var(--line);
+            padding: 9px;
+            border-radius: 6px;
+        }
+
+        .status-cell span {
+            display: block;
+            font-size: 10px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .status-cell strong {
+            font-size: 12px;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 10px;
+        }
+
+        .button-row button {
+            flex: 1;
+        }
+
+        #inventory-preview,
+        #loot-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px;
+        }
+
+        .item {
+            background: var(--panel2);
+            border: 1px solid var(--line);
+            padding: 9px;
+            border-radius: 7px;
+            font-size: 11px;
+            overflow-wrap: anywhere;
+        }
+
+        .item-name {
+            font-weight: 700;
+        }
+
+        .item-count {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+
+        #touch-controls {
+            display: none;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .pad {
+            display: grid;
+            grid-template-columns: repeat(3, 43px);
+            gap: 4px;
+        }
+
+        .pad button {
+            padding: 4px;
+            min-height: 40px;
+            touch-action: none;
+        }
+
+        .touch-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 5px;
+        }
+
+        #interaction-panel {
+            display: none;
+            margin-top: 12px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 0 12px 18px;
+            color: #71818f;
+            font-size: 10px;
+        }
+
+        #modal-layer,
+        #death-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #060a0edf;
+            z-index: 20;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .modal {
+            width: min(800px, 100%);
+            max-height: 94vh;
+            overflow: auto;
+            background: #19232d;
+            border: 1px solid #526577;
+            border-radius: 13px;
+            padding: 18px;
+            box-shadow: 0 20px 80px #0009;
+        }
+
+        .modal.wide {
+            width: min(1500px, 98vw);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+        }
+
+        .modal-header h2 {
+            font-size: 17px;
+            margin: 0;
+        }
+
+        .close-button {
+            font-size: 22px;
+            min-width: 40px;
+            padding: 5px;
+        }
+
+        #backpack-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+        }
+
+        .backpack-item {
+            background: var(--panel2);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .backpack-item strong {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .backpack-item p {
+            font-size: 11px;
+            color: var(--muted);
+            min-height: 30px;
+        }
+
+        .backpack-item .qty {
+            color: var(--accent);
+            font-size: 11px;
+        }
+
+        .backpack-item button {
+            width: 100%;
+            margin-top: 7px;
+        }
+
+        #map-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            background: #344b3a;
+        }
+
+        .map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 10px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        #tutorial-text {
+            line-height: 1.7;
+            font-size: 13px;
+            color: #c6d1da;
+        }
+
+        #tutorial-text li {
+            margin: 6px 0;
+        }
+
+        #death-overlay {
+            z-index: 30;
+        }
+
+        #death-card {
+            background: #19232d;
+            border: 1px solid #657888;
+            border-radius: 12px;
+            max-width: 450px;
+            width: 100%;
+            padding: 26px;
+            text-align: center;
+        }
+
+        #death-card h2 {
+            font-size: 25px;
+        }
+
+        #death-text {
+            font-size: 13px;
+            line-height: 1.8;
+            color: #c1cbd4;
+        }
+
+        #fullscreen-hint {
+            display: none;
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 50;
+        }
+
+        @media (max-width: 950px) {
+            #game-layout {
+                grid-template-columns: minmax(0, 1fr) 260px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            #game-layout {
+                grid-template-columns: 1fr;
+                padding: 8px;
+                gap: 9px;
+            }
+
+            header {
+                padding: 11px;
+            }
+
+            #side-panel {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            #touch-controls {
+                display: flex;
+            }
+
+            .brand-icon {
+                width: 35px;
+                height: 35px;
+            }
+
+            #backpack-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+            #side-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .modal {
+                padding: 12px;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions button {
+                flex: 1;
+            }
+
+            #game-message {
+                font-size: 10px;
+                bottom: 6px;
+                padding: 7px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="brand">
+            <div class="brand-icon">☠</div>
+            <div>
+                <h1>THE DEAD MEN WALKING</h1>
+                <div class="subtitle">OPEN-WORLD SURVIVAL · PROTOTYPE 0.4</div>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <div class="clock-box">
+                <strong>DAY <span id="day">1</span></strong>
+                <span id="clock">08:00</span>
+            </div>
+
+            <button id="map-button">M · WORLD MAP</button>
+            <button id="backpack-button">G · BACKPACK</button>
+            <button id="tutorial-button">? · HELP</button>
+            <button id="fullscreen-button">⛶ FULLSCREEN</button>
+        </div>
+    </header>
+
+    <div id="game-layout">
+        <main class="panel" id="game-frame">
+            <div class="panel-title">
+                <span id="area-title">RESIDENTIAL DISTRICT</span>
+                <span class="eyebrow" id="location-tag">OUTDOORS</span>
+            </div>
+
+            <div id="canvas-wrap">
+                <canvas id="game" width="900" height="600"></canvas>
+
+                <div id="hud-top">
+                    <div class="hud-chip" id="weapon-hud">PISTOL · 12 ROUNDS</div>
+                    <div class="hud-chip" id="enemy-hud">HOSTILES: 0</div>
+                </div>
+
+                <div id="game-message">
+                    WASD to move · E to interact · Left-click to attack
+                </div>
+
+                <div id="error-box"></div>
+            </div>
+
+            <div id="touch-controls">
+                <div class="pad">
+                    <span></span>
+                    <button data-move="up">▲</button>
+                    <span></span>
+                    <button data-move="left">◀</button>
+                    <button data-move="down">▼</button>
+                    <button data-move="right">▶</button>
+                </div>
+
+                <div class="touch-actions">
+                    <button id="touch-interact">E · USE</button>
+                    <button id="touch-attack">KNIFE</button>
+                    <button id="touch-shoot">FIRE</button>
+                    <button id="touch-backpack">BAG</button>
+                    <button id="touch-bandage">BANDAGE</button>
+                    <button id="touch-crouch">CROUCH</button>
+                </div>
+            </div>
+
+            <div class="button-row">
+                <button id="use-button">E · INTERACT</button>
+                <button id="weapon1-button" class="active">1 · PISTOL</button>
+                <button id="weapon2-button">2 · KNIFE</button>
+                <button id="crouch-button">C · CROUCH</button>
+                <button id="flash-button">L · FLASHLIGHT: OFF</button>
+            </div>
+
+            <div class="small" style="margin-top: 10px;">
+                Left-click attacks with your equipped weapon. Aim with your mouse.
+                Recruit civilians with E and escort them to the green safe zone.
+                Gunshots attract zombies.
+            </div>
+
+            <section id="interaction-panel" class="panel">
+                <div class="panel-title">
+                    <span id="interaction-title">SEARCH</span>
+                    <button id="close-interaction">CLOSE</button>
+                </div>
+
+                <div class="small" id="interaction-text"></div>
+                <div id="loot-list"></div>
+            </section>
+        </main>
+
+        <aside id="side-panel">
+            <section class="panel">
+                <h2>Survivor condition</h2>
+
+                <div class="stat">
+                    <div class="stat-head">
+                        <span>Health</span>
+                        <strong id="health-num">100</strong>
+                    </div>
+                    <div class="bar">
+                        <div id="health-bar" class="fill health"></div>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-head">
+                        <span>Hunger</span>
+                        <strong id="hunger-num">100</strong>
+                    </div>
+                    <div class="bar">
+                        <div id="hunger-bar" class="fill hunger"></div>
+                    </div>
+                </div>
+
+                <div class="stat">
+                    <div class="stat-head">
+                        <span>Thirst</span>
+                        <strong id="thirst-num">100</strong>
+                    </div>
+                    <div class="bar">
+                        <div id="thirst-bar" class="fill thirst"></div>
+                    </div>
+                </div>
+
+                <div class="status-grid">
+                    <div class="status-cell">
+                        <span>CONDITION</span>
+                        <strong id="condition">Stable</strong>
+                    </div>
+
+                    <div class="status-cell">
+                        <span>LOCATION</span>
+                        <strong id="location">Street</strong>
+                    </div>
+
+                    <div class="status-cell">
+                        <span>ZOMBIES DEFEATED</span>
+                        <strong id="kills">0</strong>
+                    </div>
+
+                    <div class="status-cell">
+                        <span>RESCUED</span>
+                        <strong id="rescued">0</strong>
+                    </div>
+
+                    <div class="status-cell">
+                        <span>FOLLOWING</span>
+                        <strong id="following">0</strong>
+                    </div>
+
+                    <div class="status-cell">
+                        <span>WEAPON</span>
+                        <strong id="equipped-label">Pistol</strong>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button id="bandage-button">B · BANDAGE (1)</button>
+                    <button id="eat-button">EAT FOOD</button>
+                    <button id="drink-button">DRINK WATER</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-title">
+                    <h2 style="margin: 0;">Quick inventory</h2>
+                    <button id="open-bag-small">OPEN BAG</button>
+                </div>
+
+                <div id="inventory-preview"></div>
+
+                <div class="small" style="margin-top: 9px;">
+                    Press G for the backpack.
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Controls</h2>
+
+                <div class="small">
+                    <b>WASD / Arrows</b> — Move<br>
+                    <b>Mouse</b> — Aim<br>
+                    <b>Left-click</b> — Fire / melee<br>
+                    <b>1 / 2</b> — Pistol / knife<br>
+                    <b>E</b> — Interact / recruit / exit<br>
+                    <b>G</b> — Backpack<br>
+                    <b>B</b> — Bandage<br>
+                    <b>M</b> — World map<br>
+                    <b>F / Space</b> — Fire / melee<br>
+                    <b>C</b> — Crouch<br>
+                    <b>L</b> — Flashlight<br>
+                    <b>Esc</b> — Close panel
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <footer>
+        THE DEAD MEN WALKING · SURVIVE · RECRUIT · RESCUE
+    </footer>
+
+    <div id="modal-layer">
+        <section class="modal" id="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-title">BACKPACK</h2>
+                <button class="close-button" id="modal-close" aria-label="Close">×</button>
+            </div>
+
+            <div id="modal-body"></div>
+        </section>
+    </div>
+
+    <div id="death-overlay">
+        <div id="death-card">
+            <h2 id="death-title">YOU DIED</h2>
+            <p id="death-text"></p>
+
+            <div class="button-row">
+                <button id="restart-button" class="primary">START A NEW RUN</button>
+                <button id="continue-button">CONTINUE FROM SAVE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="fullscreen-hint">
+        <button id="leave-fullscreen-button">EXIT FULLSCREEN</button>
+    </div>
+
+    <script>
+        (() => {
+            "use strict";
+
+            const $ = id => document.getElementById(id);
+            const canvas = $("game");
+            const ctx = canvas.getContext("2d");
+
+            const VIEW_W = 900;
+            const VIEW_H = 600;
+            const WORLD_W = 2400;
+            const WORLD_H = 1700;
+            const TILE = 40;
+            const SAVE_KEY = "tdmwPrototypeSave04";
+
+            const clamp = (value, min, max) =>
+                Math.max(min, Math.min(max, value));
+
+            const rand = (min, max) =>
+                Math.random() * (max - min) + min;
+
+            const choice = array =>
+                array[Math.floor(Math.random() * array.length)];
+
+            const distance = (a, b) =>
+                Math.hypot(a.x - b.x, a.y - b.y);
+
+            const itemNames = {
+                knife: "Knife",
+                pistol: "9mm Pistol",
+                ammo: "Pistol Ammo",
+                food: "Canned Food",
+                water: "Bottled Water",
+                bandage: "Bandage",
+                medicine: "Medicine",
+                energy: "Energy Cells"
+            };
+
+            const itemIcons = {
+                knife: "🔪",
+                pistol: "🔫",
+                ammo: "🟠",
+                food: "🥫",
+                water: "💧",
+                bandage: "🩹",
+                medicine: "💊",
+                energy: "🔋"
+            };
+
+            const itemDescriptions = {
+                knife: "A close-range weapon.",
+                pistol: "A firearm. Aim with the mouse.",
+                ammo: "Rounds for your pistol.",
+                food: "Restores hunger.",
+                water: "Restores thirst.",
+                bandage: "Restores health.",
+                medicine: "Medical supplies that restore health.",
+                energy: "Spare energy cells."
+            };
+
+            const safeZone = {
+                x: 80,
+                y: 1050,
+                w: 350,
+                h: 300
+            };
+
+            const keys = new Set();
+
+            let player;
+            let inventory;
+            let zombies;
+            let civilians;
+            let buildings;
+            let lootObjects;
+            let particles;
+            let roomZombies;
+            let grassPatches;
+
+            let worldTime;
+            let elapsed;
+            let kills;
+            let rescued;
+            let runEnded;
+            let indoor;
+            let currentBuilding;
+            let lootTarget;
+            let crouching;
+            let flashlight;
+            let weapon;
+            let discovered;
+
+            let lastFrame = 0;
+            let lastSurvivalTick = 0;
+            let lastAutoSave = 0;
+            let attackCooldown = 0;
+            let shootCooldown = 0;
+            let messageTimer = 0;
+            let damageFlash = 0;
+
+            let modalType = null;
+            let mouseX = VIEW_W / 2;
+            let mouseY = VIEW_H / 2;
+            let aimX = VIEW_W / 2;
+            let aimY = VIEW_H / 2;
+            let camX = 0;
+            let camY = 0;
+            let lastX = 1;
+            let lastY = 0;
+
+            function notify(text) {
+                messageTimer = 3.5;
+                $("game-message").textContent = text;
+            }
+
+            function inSafeZone(point) {
+                return (
+                    point.x >= safeZone.x &&
+                    point.x <= safeZone.x + safeZone.w &&
+                    point.y >= safeZone.y &&
+                    point.y <= safeZone.y + safeZone.h
+                );
+            }
+
+            function showError(error) {
+                const box = $("error-box");
+
+                box.style.display = "flex";
+                box.textContent =
+                    "THE GAME ENCOUNTERED AN ERROR\n\n" +
+                    String(error?.stack || error) +
+                    "\n\nPlease copy this message if you need help debugging.";
+
+                console.error(error);
+            }
+
+            window.addEventListener("error", event => {
+                showError(event.error || event.message);
+            });
+
+            function makeLoot(x, y, label, buildingId = null) {
+                const pool = [
+                    "food",
+                    "water",
+                    "ammo",
+                    "bandage",
+                    "medicine",
+                    "energy",
+                    "nothing"
+                ];
+
+                const loot = [];
+                const amount = Math.floor(rand(1, 4));
+
+                for (let i = 0; i < amount; i++) {
+                    const item = choice(pool);
+
+                    if (item !== "nothing") {
+                        loot.push(item);
+                    }
+                }
+
+                return {
+                    id: Math.random().toString(36).slice(2, 10),
+                    x,
+                    y,
+                    label,
+                    buildingId,
+                    searched: false,
+                    loot
+                };
+            }
+
+            function makeZombie(x, y) {
+                return {
+                    x,
+                    y,
+                    r: 13,
+                    speed: rand(31, 45),
+                    state: "wander",
+                    targetX: x,
+                    targetY: y,
+                    alert: 0,
+                    attackTimer: rand(0, 1),
+                    wanderTimer: rand(1, 3)
+                };
+            }
+
+            function makeCivilian(x, y, index) {
+                return {
+                    id: "civilian-" + index,
+                    x,
+                    y,
+                    r: 11,
+                    speed: 65,
+                    name: choice([
+                        "Alex", "Morgan", "Jamie", "Taylor",
+                        "Sam", "Jordan", "Casey", "Riley",
+                        "Avery", "Robin", "Chris", "Drew"
+                    ]),
+                    state: "idle",
+                    delivered: false,
+                    angle: rand(0, Math.PI * 2)
+                };
+            }
+
+            function createBuildings() {
+                return [
+                    {
+                        id: "home",
+                        x: 330,
+                        y: 170,
+                        w: 180,
+                        h: 140,
+                        name: "Starting House",
+                        type: "home"
+                    },
+                    {
+                        id: "house2",
+                        x: 690,
+                        y: 115,
+                        w: 180,
+                        h: 140,
+                        name: "Suburban House",
+                        type: "home"
+                    },
+                    {
+                        id: "shop",
+                        x: 1070,
+                        y: 330,
+                        w: 200,
+                        h: 150,
+                        name: "Corner Shop",
+                        type: "shop"
+                    },
+                    {
+                        id: "clinic",
+                        x: 1700,
+                        y: 180,
+                        w: 220,
+                        h: 170,
+                        name: "Medical Clinic",
+                        type: "medical"
+                    },
+                    {
+                        id: "house3",
+                        x: 440,
+                        y: 700,
+                        w: 190,
+                        h: 150,
+                        name: "Abandoned House",
+                        type: "home"
+                    },
+                    {
+                        id: "store2",
+                        x: 1170,
+                        y: 870,
+                        w: 230,
+                        h: 160,
+                        name: "Hardware Store",
+                        type: "shop"
+                    },
+                    {
+                        id: "barracks",
+                        x: 1760,
+                        y: 1040,
+                        w: 230,
+                        h: 170,
+                        name: "Military Outpost",
+                        type: "military"
+                    },
+                    {
+                        id: "station",
+                        x: 870,
+                        y: 1270,
+                        w: 220,
+                        h: 160,
+                        name: "Police Station",
+                        type: "military"
+                    }
+                ];
+            }
+
+            function insideBuilding(point) {
+                return buildings.some(building =>
+                    point.x > building.x - 25 &&
+                    point.x < building.x + building.w + 25 &&
+                    point.y > building.y - 25 &&
+                    point.y < building.y + building.h + 25
+                );
+            }
+
+            function collidesBuilding(x, y, radius = player.r) {
+                return buildings.some(building =>
+                    x + radius > building.x &&
+                    x - radius < building.x + building.w &&
+                    y + radius > building.y &&
+                    y - radius < building.y + building.h
+                );
+            }
+
+            function walkable(x, y, radius = player.r) {
+                return (
+                    x > radius &&
+                    y > radius &&
+                    x < WORLD_W - radius &&
+                    y < WORLD_H - radius &&
+                    !collidesBuilding(x, y, radius)
+                );
+            }
+
+            function generateWorld() {
+                buildings = createBuildings();
+                lootObjects = [];
+                zombies = [];
+                civilians = [];
+                particles = [];
+                roomZombies = [];
+
+                for (const building of buildings) {
+                    const amount = building.type === "home" ? 4 : 6;
+
+                    for (let i = 0; i < amount; i++) {
+                        lootObjects.push(
+                            makeLoot(
+                                building.x + 28 + (i % 2) * 75,
+                                building.y + 27 + Math.floor(i / 2) * 38,
+                                choice([
+                                    "Cupboard",
+                                    "Drawer",
+                                    "Cabinet",
+                                    "Storage Box"
+                                ]),
+                                building.id
+                            )
+                        );
+                    }
+                }
+
+                let made = 0;
+                let attempts = 0;
+
+                while (made < 32 && attempts < 1500) {
+                    attempts++;
+
+                    const point = {
+                        x: rand(70, WORLD_W - 70),
+                        y: rand(70, WORLD_H - 70)
+                    };
+
+                    if (inSafeZone(point)) continue;
+                    if (insideBuilding(point)) continue;
+                    if (distance(point, player) < 300) continue;
+
+                    if (zombies.some(z => distance(z, point) < 55)) {
+                        continue;
+                    }
+
+                    zombies.push(makeZombie(point.x, point.y));
+                    made++;
+                }
+
+                const civilianSpots = [
+                    [620, 430],
+                    [930, 700],
+                    [1420, 370],
+                    [1510, 770],
+                    [660, 970],
+                    [1330, 1300],
+                    [2050, 650],
+                    [2040, 1390],
+                    [1000, 200],
+                    [2200, 350]
+                ];
+
+                civilianSpots.forEach((spot, index) => {
+                    let point = {
+                        x: spot[0],
+                        y: spot[1]
+                    };
+
+                    if (insideBuilding(point) || inSafeZone(point)) {
+                        point = {
+                            x: 500 + index * 115,
+                            y: 550 + index * 35
+                        };
+                    }
+
+                    civilians.push(
+                        makeCivilian(point.x, point.y, index)
+                    );
+                });
+
+                grassPatches = [];
+
+                for (let i = 0; i < 500; i++) {
+                    grassPatches.push({
+                        x: (i * 173 + 37) % WORLD_W,
+                        y: (i * 271 + 61) % WORLD_H,
+                        r: rand(4, 12),
+                        shade: i % 3
+                    });
+                }
+            }
+
+            function resetRun() {
+                player = {
+                    x: 520,
+                    y: 350,
+                    r: 12,
+                    speed: 175,
+                    health: 100,
+                    hunger: 100,
+                    thirst: 100,
+                    facingX: 1,
+                    facingY: 0,
+                    moving: false
+                };
+
+                inventory = {
+                    knife: 1,
+                    pistol: 1,
+                    ammo: 12,
+                    food: 2,
+                    water: 2,
+                    bandage: 1,
+                    medicine: 0,
+                    energy: 0
+                };
+
+                worldTime = 480;
+                elapsed = 0;
+                kills = 0;
+                rescued = 0;
+
+                runEnded = false;
+                indoor = false;
+                currentBuilding = null;
+                lootTarget = null;
+                crouching = false;
+                flashlight = false;
+                weapon = "pistol";
+                discovered = new Set(["home"]);
+
+                lastSurvivalTick = 0;
+                lastAutoSave = 0;
+                attackCooldown = 0;
+                shootCooldown = 0;
+                damageFlash = 0;
+                messageTimer = 0;
+
+                keys.clear();
+                closeModal();
+
+                $("death-overlay").style.display = "none";
+                $("interaction-panel").style.display = "none";
+                $("error-box").style.display = "none";
+
+                generateWorld();
+
+                $("area-title").textContent = "RESIDENTIAL DISTRICT";
+                $("location-tag").textContent = "OUTDOORS";
+                $("location").textContent = "Street";
+                $("flash-button").textContent = "L · FLASHLIGHT: OFF";
+
+                notify("WASD to move. Recruit civilians and find the safe zone.");
+                updateUI();
+                saveGame();
+            }
+
+            function interiorPos(object) {
+                const list = lootObjects.filter(item =>
+                    item.buildingId === currentBuilding?.id
+                );
+
+                const index = list.indexOf(object);
+
+                return {
+                    x: 130 + (index % 4) * 200,
+                    y: 135 + Math.floor(index / 4) * 125
+                };
+            }
+
+            function enterBuilding(building) {
+                indoor = true;
+                currentBuilding = building;
+                discovered.add(building.id);
+
+                player.x = 450;
+                player.y = 450;
+                player.moving = false;
+
+                roomZombies = [];
+
+                if (Math.random() < (building.type === "home" ? 0.16 : 0.3)) {
+                    roomZombies.push(
+                        makeZombie(rand(180, 720), rand(140, 360))
+                    );
+                }
+
+                $("area-title").textContent = building.name.toUpperCase();
+                $("location-tag").textContent = "INDOORS";
+                $("location").textContent = "Indoors";
+
+                closeInteraction();
+                notify("Entered " + building.name + ". Press E near the exit to leave.");
+            }
+
+            function exitBuilding() {
+                if (!indoor || !currentBuilding) return;
+
+                const building = currentBuilding;
+
+                indoor = false;
+                player.x = building.x + building.w / 2;
+                player.y = building.y + building.h + 45;
+
+                currentBuilding = null;
+                roomZombies = [];
+
+                $("area-title").textContent = "RESIDENTIAL DISTRICT";
+                $("location-tag").textContent = "OUTDOORS";
+                $("location").textContent = "Street";
+
+                closeInteraction();
+                notify("You are back outside.");
+            }
+
+            function interact() {
+                if (runEnded || modalType) return;
+
+                if (lootTarget) {
+                    closeInteraction();
+                    return;
+                }
+
+                if (indoor) {
+                    if (
+                        player.y > 480 &&
+                        Math.abs(player.x - 450) < 140
+                    ) {
+                        exitBuilding();
+                        return;
+                    }
+
+                    const containers = lootObjects
+                        .filter(object =>
+                            object.buildingId === currentBuilding?.id &&
+                            !object.searched
+                        )
+                        .sort((a, b) =>
+                            distance(interiorPos(a), player) -
+                            distance(interiorPos(b), player)
+                        );
+
+                    if (
+                        containers.length &&
+                        distance(interiorPos(containers[0]), player) < 65
+                    ) {
+                        openLoot(containers[0]);
+                        return;
+                    }
+
+                    notify("Move close to a container or the exit.");
+                    return;
+                }
+
+                const civilian = civilians.find(person =>
+                    !person.delivered &&
+                    distance(person, player) < 65
+                );
+
+                if (civilian) {
+                    if (civilian.state !== "following") {
+                        civilian.state = "following";
+                        notify(
+                            civilian.name +
+                            " recruited! Escort them to the green safe zone."
+                        );
+                    } else {
+                        notify(
+                            civilian.name +
+                            " is following you. Reach the safe zone."
+                        );
+                    }
+
+                    return;
+                }
+
+                if (inSafeZone(player)) {
+                    const followers = civilians.filter(person =>
+                        person.state === "following" &&
+                        !person.delivered &&
+                        distance(person, player) < 190
+                    );
+
+                    if (followers.length > 0) {
+                        for (const person of followers) {
+                            person.delivered = true;
+                            person.state = "rescued";
+                            rescued++;
+                        }
+
+                        notify("Rescue complete! Survivors saved: " + rescued);
+                        updateUI();
+                        saveGame();
+                        return;
+                    }
+
+                    notify("SAFE ZONE: bring recruited survivors here.");
+                    return;
+                }
+
+                const building = buildings.find(item =>
+                    distance({
+                        x: item.x + item.w / 2,
+                        y: item.y + item.h + 10
+                    }, player) < 100 ||
+                    distance({
+                        x: item.x + item.w / 2,
+                        y: item.y + item.h / 2
+                    }, player) < 100
+                );
+
+                if (building) {
+                    enterBuilding(building);
+                    return;
+                }
+
+                notify("Nothing to interact with nearby.");
+            }
+
+            function openLoot(object) {
+                lootTarget = object;
+
+                $("interaction-panel").style.display = "block";
+                $("interaction-title").textContent =
+                    object.label.toUpperCase();
+
+                $("interaction-text").textContent =
+                    "Search the container and take what you need.";
+
+                renderLoot();
+            }
+
+            function renderLoot() {
+                const box = $("loot-list");
+                box.replaceChildren();
+
+                if (!lootTarget) return;
+
+                if (
+                    lootTarget.searched ||
+                    lootTarget.loot.length === 0
+                ) {
+                    box.textContent = "Nothing useful remains.";
+                    return;
+                }
+
+                lootTarget.loot.forEach((item, index) => {
+                    const card = document.createElement("div");
+                    card.className = "item";
+
+                    const name = document.createElement("div");
+                    name.className = "item-name";
+                    name.textContent = itemIcons[item] + " " + itemNames[item];
+
+                    const take = document.createElement("button");
+                    take.textContent = "TAKE";
+                    take.addEventListener("click", () => takeLoot(index));
+
+                    card.append(name, take);
+                    box.appendChild(card);
+                });
+            }
+
+            function takeLoot(index) {
+                if (!lootTarget || lootTarget.searched) return;
+
+                const item = lootTarget.loot[index];
+
+                if (!item) return;
+
+                const carried = Object.values(inventory).reduce(
+                    (total, amount) => total + amount,
+                    0
+                );
+
+                if (carried >= 40) {
+                    notify("Backpack full. Drop something first.");
+                    return;
+                }
+
+                inventory[item] = (inventory[item] || 0) + 1;
+                lootTarget.loot.splice(index, 1);
+
+                if (lootTarget.loot.length === 0) {
+                    lootTarget.searched = true;
+                    $("interaction-text").textContent =
+                        "Container searched. Nothing else remains.";
+                }
+
+                renderLoot();
+                updateUI();
+                renderModalIfBackpack();
+                saveGame();
+                notify("Found: " + itemNames[item]);
+            }
+
+            function closeInteraction() {
+                lootTarget = null;
+                $("interaction-panel").style.display = "none";
+            }
+
+            function dropItem(item) {
+                if (!inventory[item]) return;
+
+                if (
+                    (item === "knife" && weapon === "melee" &&
+                        inventory.knife === 1) ||
+                    (item === "pistol" && weapon === "pistol" &&
+                        inventory.pistol === 1)
+                ) {
+                    notify("You cannot drop your only equipped weapon.");
+                    return;
+                }
+
+                inventory[item]--;
+
+                const object = makeLoot(
+                    player.x + rand(-22, 22),
+                    player.y + rand(-22, 22),
+                    "Dropped Item",
+                    indoor && currentBuilding ? currentBuilding.id : null
+                );
+
+                object.loot = [item];
+                lootObjects.push(object);
+
+                updateUI();
+                saveGame();
+                notify("Dropped " + itemNames[item]);
+            }
+
+            function eatFood() {
+                if (!inventory.food) {
+                    notify("No food available.");
+                    return;
+                }
+
+                inventory.food--;
+                player.hunger = clamp(player.hunger + 38, 0, 100);
+
+                updateUI();
+                renderModalIfBackpack();
+                notify("Hunger restored.");
+            }
+
+            function drinkWater() {
+                if (!inventory.water) {
+                    notify("No water available.");
+                    return;
+                }
+
+                inventory.water--;
+                player.thirst = clamp(player.thirst + 42, 0, 100);
+
+                updateUI();
+                renderModalIfBackpack();
+                notify("Thirst restored.");
+            }
+
+            function bandage() {
+                if (runEnded) return;
+
+                if (!inventory.bandage) {
+                    notify("No bandages available.");
+                    return;
+                }
+
+                if (player.health >= 100) {
+                    notify("Health is already full.");
+                    return;
+                }
+
+                inventory.bandage--;
+                player.health = clamp(player.health + 35, 0, 100);
+
+                updateUI();
+                renderModalIfBackpack();
+                notify("You bandage your wounds.");
+            }
+
+            function useMedicine() {
+                if (!inventory.medicine) {
+                    notify("No medicine available.");
+                    return;
+                }
+
+                if (player.health >= 100) {
+                    notify("Health is already full.");
+                    return;
+                }
+
+                inventory.medicine--;
+                player.health = clamp(player.health + 22, 0, 100);
+
+                updateUI();
+                renderModalIfBackpack();
+                notify("Health restored.");
+            }
+
+            function equipWeapon(type) {
+                if (type === "pistol" && !inventory.pistol) {
+                    notify("You don't have a pistol.");
+                    return;
+                }
+
+                if (type === "melee" && !inventory.knife) {
+                    notify("You don't have a knife.");
+                    return;
+                }
+
+                weapon = type;
+                updateUI();
+                renderModalIfBackpack();
+
+                notify(type === "pistol" ? "Pistol equipped." : "Knife equipped.");
+            }
+
+            function melee() {
+                if (
+                    runEnded ||
+                    lootTarget ||
+                    modalType ||
+                    attackCooldown > 0
+                ) {
+                    return;
+                }
+
+                if (!inventory.knife) {
+                    notify("You have no knife.");
+                    return;
+                }
+
+                weapon = "melee";
+                attackCooldown = 0.38;
+
+                const list = indoor ? roomZombies : zombies;
+                let target = null;
+                let bestDistance = 66;
+
+                for (const zombie of list) {
+                    const dx = zombie.x - player.x;
+                    const dy = zombie.y - player.y;
+                    const d = Math.hypot(dx, dy);
+
+                    const dot =
+                        dx * player.facingX +
+                        dy * player.facingY;
+
+                    if (
+                        d < bestDistance &&
+                        (dot > -15 || d < 28)
+                    ) {
+                        target = zombie;
+                        bestDistance = d;
+                    }
+                }
+
+                if (!target) {
+                    notify("Your knife cuts through empty air.");
+                    return;
+                }
+
+                list.splice(list.indexOf(target), 1);
+                kills++;
+
+                particles.push({
+                    kind: "impact",
+                    x: target.x,
+                    y: target.y,
+                    t: 0.35,
+                    max: 0.35,
+                    color: "#b84d48"
+                });
+
+                updateUI();
+                notify("Zombie defeated with the knife!");
+            }
+
+            function shoot() {
+                if (
+                    runEnded ||
+                    lootTarget ||
+                    modalType ||
+                    shootCooldown > 0
+                ) {
+                    return;
+                }
+
+                if (!inventory.pistol) {
+                    notify("You don't have a pistol.");
+                    return;
+                }
+
+                if (!inventory.ammo) {
+                    notify("Click. Empty magazine.");
+                    return;
+                }
+
+                weapon = "pistol";
+                shootCooldown = 0.24;
+                inventory.ammo--;
+
+                const startX = player.x + player.facingX * 18;
+                const startY = player.y + player.facingY * 18;
+
+                const list = indoor ? roomZombies : zombies;
+                let target = null;
+                let bestDistance = 470;
+
+                for (const zombie of list) {
+                    const dx = zombie.x - startX;
+                    const dy = zombie.y - startY;
+
+                    const along =
+                        dx * player.facingX +
+                        dy * player.facingY;
+
+                    const perpendicular = Math.abs(
+                        dx * player.facingY -
+                        dy * player.facingX
+                    );
+
+                    if (
+                        along > 0 &&
+                        along < bestDistance &&
+                        perpendicular < Math.max(19, along * 0.045)
+                    ) {
+                        bestDistance = along;
+                        target = zombie;
+                    }
+                }
+
+                const shotLength = target
+                    ? Math.max(25, bestDistance)
+                    : 470;
+
+                particles.push({
+                    kind: "tracer",
+                    x1: startX,
+                    y1: startY,
+                    x2: startX + player.facingX * shotLength,
+                    y2: startY + player.facingY * shotLength,
+                    t: 0.16,
+                    max: 0.16,
+                    color: "#ffe6a0"
+                });
+
+                particles.push({
+                    kind: "muzzle",
+                    x: startX,
+                    y: startY,
+                    t: 0.08,
+                    max: 0.08,
+                    color: "#ffcf75"
+                });
+
+                if (target) {
+                    list.splice(list.indexOf(target), 1);
+                    kills++;
+
+                    particles.push({
+                        kind: "impact",
+                        x: target.x,
+                        y: target.y,
+                        t: 0.35,
+                        max: 0.35,
+                        color: "#e46d68"
+                    });
+
+                    notify("HIT CONFIRMED — ZOMBIE DOWN.");
+                } else {
+                    notify("Shot fired — " + inventory.ammo + " rounds left.");
+                }
+
+                if (!crouching) {
+                    for (const zombie of list) {
+                        if (distance(zombie, player) < 850) {
+                            zombie.state = "chase";
+                            zombie.alert = 12;
+                        }
+                    }
+                }
+
+                updateUI();
+            }
+
+            function toggleFlashlight() {
+                flashlight = !flashlight;
+
+                $("flash-button").textContent =
+                    "L · FLASHLIGHT: " + (flashlight ? "ON" : "OFF");
+
+                notify(flashlight ? "Flashlight on." : "Flashlight off.");
+            }
+
+            function toggleCrouch() {
+                crouching = !crouching;
+
+                $("crouch-button").textContent =
+                    "C · " + (crouching ? "STAND" : "CROUCH");
+
+                notify(crouching ? "You crouch and move quietly." : "You stand up.");
+            }
+
+            function toggleBackpack() {
+                if (modalType === "backpack") {
+                    closeModal();
+                } else {
+                    openModal("backpack");
+                }
+            }
+
+            function openModal(type) {
+                if (lootTarget && type !== "backpack") {
+                    closeInteraction();
+                }
+
+                modalType = type;
+                $("modal-layer").style.display = "flex";
+
+                if (type === "backpack") {
+                    $("modal-card").classList.remove("wide");
+                    $("modal-title").textContent = "BACKPACK";
+                    renderBackpack();
+                }
+
+                if (type === "map") {
+                    $("modal-card").classList.add("wide");
+                    $("modal-title").textContent = "WORLD MAP";
+                    renderMapModal();
+                }
+
+                if (type === "tutorial") {
+                    $("modal-card").classList.remove("wide");
+                    $("modal-title").textContent = "SURVIVAL GUIDE";
+                    renderTutorial();
+                }
+            }
+
+            function closeModal() {
+                modalType = null;
+                $("modal-layer").style.display = "none";
+            }
+
+            function renderModalIfBackpack() {
+                if (modalType === "backpack") {
+                    renderBackpack();
+                }
+            }
+
+            function renderBackpack() {
+                const body = $("modal-body");
+                const carried = Object.values(inventory).reduce(
+                    (total, amount) => total + amount,
+                    0
+                );
+
+                body.replaceChildren();
+
+                const summary = document.createElement("div");
+                summary.className = "small";
+                summary.textContent = "Carried items: " + carried + " / 40.";
+                body.appendChild(summary);
+
+                const grid = document.createElement("div");
+                grid.id = "backpack-grid";
+
+                for (const item of Object.keys(inventory)) {
+                    const quantity = inventory[item];
+                    const card = document.createElement("div");
+                    card.className = "backpack-item";
+
+                    const title = document.createElement("strong");
+                    title.textContent = itemIcons[item] + " " + itemNames[item];
+
+                    const qty = document.createElement("div");
+                    qty.className = "qty";
+                    qty.textContent = "Quantity: " + quantity;
+
+                    const description = document.createElement("p");
+                    description.textContent = itemDescriptions[item];
+
+                    card.append(title, qty, description);
+
+                    if (item === "pistol" || item === "knife") {
+                        const equip = document.createElement("button");
+                        const type = item === "pistol" ? "pistol" : "melee";
+
+                        equip.textContent =
+                            weapon === type ? "EQUIPPED" : "EQUIP";
+
+                        equip.disabled = !quantity || weapon === type;
+                        equip.addEventListener("click", () => equipWeapon(type));
+
+                        card.appendChild(equip);
+                    }
+
+                    if (["food", "water", "bandage", "medicine"].includes(item)) {
+                        const use = document.createElement("button");
+
+                        use.textContent = {
+                            food: "EAT",
+                            water: "DRINK",
+                            bandage: "BANDAGE",
+                            medicine: "USE MEDICINE"
+                        }[item];
+
+                        use.disabled = !quantity;
+                        use.addEventListener("click", () => {
+                            if (item === "food") eatFood();
+                            if (item === "water") drinkWater();
+                            if (item === "bandage") bandage();
+                            if (item === "medicine") useMedicine();
+                        });
+
+                        card.appendChild(use);
+                    }
+
+                    if (item !== "pistol" && item !== "knife") {
+                        const drop = document.createElement("button");
+
+                        drop.textContent = "DROP ONE";
+                        drop.disabled = !quantity;
+                        drop.addEventListener("click", () => {
+                            dropItem(item);
+                            renderBackpack();
+                        });
+
+                        card.appendChild(drop);
+                    }
+
+                    grid.appendChild(card);
+                }
+
+                body.appendChild(grid);
+            }
+
+            function renderTutorial() {
+                const body = $("modal-body");
+
+                body.innerHTML = `
+                    <div id="tutorial-text">
+                        <p><b>You are not alone, but you are not safe.</b></p>
+
+                        <ul>
+                            <li><b>WASD / arrows:</b> Move around the world.</li>
+                            <li><b>Mouse + left-click:</b> Aim and attack.</li>
+                            <li><b>1 / 2:</b> Equip pistol / knife.</li>
+                            <li><b>E:</b> Enter buildings, search containers,
+                                recruit civilians and exit indoors.</li>
+                            <li><b>G:</b> Backpack. <b>B:</b> Bandage.
+                                <b>M:</b> World map.</li>
+                            <li><b>F / Space:</b> Fire / knife attack.</li>
+                            <li><b>C:</b> Crouch. <b>L:</b> Flashlight.</li>
+                            <li><b>Esc:</b> Close a panel.</li>
+                        </ul>
+
+                        <p>
+                            The green outlined area is the safe zone.
+                            Approach ordinary civilians and press E to recruit
+                            them. Escort followers into the safe zone and press E
+                            to complete the rescue.
+                        </p>
+
+                        <p>
+                            Gunshots attract zombies. Hunger and thirst gradually
+                            decrease. Search buildings for supplies.
+                        </p>
+                    </div>
+
+                    <div class="button-row">
+                        <button class="primary" id="dismiss-tutorial">
+                            GOT IT — SURVIVE
+                        </button>
+                    </div>
+                `;
+
+                $("dismiss-tutorial").addEventListener("click", closeModal);
+            }
+
+            function drawMapTo(context) {
+                const mapW = context.canvas.width;
+                const mapH = context.canvas.height;
+                const sx = mapW / WORLD_W;
+                const sy = mapH / WORLD_H;
+
+                context.clearRect(0, 0, mapW, mapH);
+
+                context.fillStyle = "#334b39";
+                context.fillRect(0, 0, mapW, mapH);
+
+                context.fillStyle = "#858a7c";
+                context.fillRect(0, 480 * sy, mapW, 100 * sy);
+                context.fillRect(730 * sx, 0, 85 * sx, mapH);
+                context.fillRect(0, 940 * sy, mapW, 60 * sy);
+                context.fillRect(0, 1420 * sy, mapW, 55 * sy);
+
+                for (const building of buildings) {
+                    context.fillStyle =
+                        building.type === "medical" ? "#b9d7e5" :
+                        building.type === "military" ? "#8d9a77" :
+                        building.type === "shop" ? "#d0b17a" :
+                        "#c5bda7";
+
+                    context.fillRect(
+                        building.x * sx,
+                        building.y * sy,
+                        building.w * sx,
+                        building.h * sy
+                    );
+
+                    context.strokeStyle = "#17241b";
+                    context.lineWidth = 2;
+
+                    context.strokeRect(
+                        building.x * sx,
+                        building.y * sy,
+                        building.w * sx,
+                        building.h * sy
+                    );
+
+                    context.fillStyle = "#ffffff";
+                    context.textAlign = "center";
+                    context.font = "bold 17px Arial";
+
+                    context.fillText(
+                        building.name,
+                        (building.x + building.w / 2) * sx,
+                        (building.y + building.h / 2) * sy + 5
+                    );
+                }
+
+                context.fillStyle = "#2caa67";
+                context.globalAlpha = 0.24;
+
+                context.fillRect(
+                    safeZone.x * sx,
+                    safeZone.y * sy,
+                    safeZone.w * sx,
+                    safeZone.h * sy
+                );
+
+                context.globalAlpha = 1;
+                context.strokeStyle = "#73ff9d";
+                context.lineWidth = 5;
+
+                context.strokeRect(
+                    safeZone.x * sx,
+                    safeZone.y * sy,
+                    safeZone.w * sx,
+                    safeZone.h * sy
+                );
+
+                context.fillStyle = "#baffce";
+                context.font = "bold 20px Arial";
+                context.fillText(
+                    "SAFE ZONE",
+                    (safeZone.x + safeZone.w / 2) * sx,
+                    (safeZone.y + safeZone.h / 2) * sy
+                );
+
+                for (const zombie of zombies) {
+                    context.fillStyle = "#f04f4f";
+                    context.beginPath();
+                    context.arc(
+                        zombie.x * sx,
+                        zombie.y * sy,
+                        5,
+                        0,
+                        Math.PI * 2
+                    );
+                    context.fill();
+                }
+
+                for (const person of civilians.filter(p => !p.delivered)) {
+                    context.fillStyle =
+                        person.state === "following" ? "#ffcf69" : "#65d7ed";
+
+                    context.beginPath();
+                    context.arc(
+                        person.x * sx,
+                        person.y * sy,
+                        6,
+                        0,
+                        Math.PI * 2
+                    );
+                    context.fill();
+                }
+
+                context.fillStyle = "#7bdf87";
+                context.strokeStyle = "#eaffeb";
+                context.lineWidth = 4;
+
+                context.beginPath();
+                context.arc(
+                    player.x * sx,
+                    player.y * sy,
+                    9,
+                    0,
+                    Math.PI * 2
+                );
+
+                context.fill();
+                context.stroke();
+                context.textAlign = "left";
+            }
+
+            function renderMapModal() {
+                const body = $("modal-body");
+                body.replaceChildren();
+
+                const description = document.createElement("div");
+                description.className = "small";
+                description.style.marginBottom = "10px";
+                description.textContent =
+                    "Full world map. Red markers are zombies, blue markers are " +
+                    "civilians, gold markers are followers, and the green box " +
+                    "is the protected safe zone.";
+
+                body.appendChild(description);
+
+                const map = document.createElement("canvas");
+                map.id = "map-canvas";
+                map.width = 1600;
+                map.height = Math.round(1600 * WORLD_H / WORLD_W);
+
+                body.appendChild(map);
+                drawMapTo(map.getContext("2d"));
+
+                const legend = document.createElement("div");
+                legend.className = "map-legend";
+                legend.textContent =
+                    "🟢 You · 🔴 Hostile · 🔵 Civilian · " +
+                    "🟡 Recruited follower · 🟩 Safe zone";
+
+                body.appendChild(legend);
+            }
+
+            function updateAimFromScreen(screenX, screenY) {
+                const rect = canvas.getBoundingClientRect();
+
+                mouseX = (screenX - rect.left) * VIEW_W / rect.width;
+                mouseY = (screenY - rect.top) * VIEW_H / rect.height;
+
+                if (indoor) {
+                    aimX = mouseX;
+                    aimY = mouseY;
+                } else {
+                    camX = clamp(player.x - VIEW_W / 2, 0, WORLD_W - VIEW_W);
+                    camY = clamp(player.y - VIEW_H / 2, 0, WORLD_H - VIEW_H);
+
+                    aimX = mouseX + camX;
+                    aimY = mouseY + camY;
+                }
+
+                const dx = aimX - player.x;
+                const dy = aimY - player.y;
+                const length = Math.hypot(dx, dy) || 1;
+
+                player.facingX = dx / length;
+                player.facingY = dy / length;
+            }
+
+            function updatePlayer(dt) {
+                if (lootTarget || modalType) return;
+
+                let dx = 0;
+                let dy = 0;
+
+                if (keys.has("w") || keys.has("arrowup")) dy--;
+                if (keys.has("s") || keys.has("arrowdown")) dy++;
+                if (keys.has("a") || keys.has("arrowleft")) dx--;
+                if (keys.has("d") || keys.has("arrowright")) dx++;
+
+                const length = Math.hypot(dx, dy);
+                player.moving = length > 0;
+
+                if (!length) return;
+
+                dx /= length;
+                dy /= length;
+
+                lastX = dx;
+                lastY = dy;
+
+                const speed = player.speed * (crouching ? 0.48 : 1);
+                const nx = player.x + dx * speed * dt;
+                const ny = player.y + dy * speed * dt;
+
+                if (indoor) {
+                    player.x = clamp(nx, 55, 845);
+                    player.y = clamp(ny, 55, 535);
+                    return;
+                }
+
+                if (walkable(nx, player.y)) player.x = nx;
+                if (walkable(player.x, ny)) player.y = ny;
+            }
+
+            function updateZombies(dt, list) {
+                for (const zombie of list) {
+                    if (!indoor && inSafeZone(zombie)) {
+                        zombie.state = "wander";
+                        zombie.alert = 0;
+
+                        const cx = safeZone.x + safeZone.w / 2;
+                        const cy = safeZone.y + safeZone.h / 2;
+                        const dx = zombie.x - cx;
+                        const dy = zombie.y - cy;
+                        const length = Math.hypot(dx, dy) || 1;
+
+                        zombie.x += dx / length * 50 * dt;
+                        zombie.y += dy / length * 50 * dt;
+
+                        continue;
+                    }
+
+                    const d = distance(zombie, player);
+                    const sight = crouching ? 105 : 300;
+
+                    if (d < sight && (!crouching || d < 45)) {
+                        zombie.state = "chase";
+                        zombie.alert = 5;
+                    }
+
+                    if (!crouching && player.moving && d < 190) {
+                        zombie.state = "chase";
+                        zombie.alert = 4;
+                    }
+
+                    zombie.alert -= dt;
+
+                    if (zombie.state === "chase" && zombie.alert <= 0) {
+                        zombie.state = "wander";
+                    }
+
+                    if (zombie.state === "chase") {
+                        const dx = player.x - zombie.x;
+                        const dy = player.y - zombie.y;
+                        const length = Math.hypot(dx, dy) || 1;
+
+                        const nx = zombie.x + dx / length * zombie.speed * 1.45 * dt;
+                        const ny = zombie.y + dy / length * zombie.speed * 1.45 * dt;
+
+                        if (indoor) {
+                            zombie.x = clamp(nx, 50, VIEW_W - 50);
+                            zombie.y = clamp(ny, 50, VIEW_H - 50);
+                        } else {
+                            if (!collidesBuilding(nx, zombie.y, zombie.r)) {
+                                zombie.x = clamp(nx, zombie.r, WORLD_W - zombie.r);
+                            }
+
+                            if (!collidesBuilding(zombie.x, ny, zombie.r)) {
+                                zombie.y = clamp(ny, zombie.r, WORLD_H - zombie.r);
+                            }
+                        }
+
+                        if (
+                            d < zombie.r + player.r + 4 &&
+                            (indoor || !inSafeZone(player))
+                        ) {
+                            zombie.attackTimer -= dt;
+
+                            if (zombie.attackTimer <= 0) {
+                                player.health -= 7;
+                                damageFlash = 0.22;
+                                zombie.attackTimer = 1.15;
+
+                                if (player.health <= 0) die();
+                            }
+                        }
+                    } else {
+                        zombie.wanderTimer -= dt;
+
+                        if (zombie.wanderTimer <= 0) {
+                            zombie.targetX = clamp(
+                                zombie.x + rand(-170, 170),
+                                25,
+                                indoor ? VIEW_W - 25 : WORLD_W - 25
+                            );
+
+                            zombie.targetY = clamp(
+                                zombie.y + rand(-170, 170),
+                                25,
+                                indoor ? VIEW_H - 25 : WORLD_H - 25
+                            );
+
+                            zombie.wanderTimer = rand(2, 5);
+                        }
+
+                        const dx = zombie.targetX - zombie.x;
+                        const dy = zombie.targetY - zombie.y;
+                        const length = Math.hypot(dx, dy);
+
+                        if (length > 4) {
+                            const nx = zombie.x + dx / length * zombie.speed * 0.42 * dt;
+                            const ny = zombie.y + dy / length * zombie.speed * 0.42 * dt;
+
+                            if (indoor) {
+                                zombie.x = clamp(nx, 40, VIEW_W - 40);
+                                zombie.y = clamp(ny, 40, VIEW_H - 40);
+                            } else {
+                                if (!collidesBuilding(nx, zombie.y, zombie.r)) {
+                                    zombie.x = clamp(nx, zombie.r, WORLD_W - zombie.r);
+                                }
+
+                                if (!collidesBuilding(zombie.x, ny, zombie.r)) {
+                                    zombie.y = clamp(ny, zombie.r, WORLD_H - zombie.r);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            function updateCivilians(dt) {
+                if (indoor) return;
+
+                const followers = civilians.filter(person =>
+                    person.state === "following" && !person.delivered
+                );
+
+                for (const person of civilians) {
+                    if (person.delivered) continue;
+
+                    if (person.state === "following") {
+                        const index = followers.indexOf(person);
+                        const angle = index * 1.6 + Math.PI;
+
+                        const tx = player.x +
+                            Math.cos(angle) * (48 + (index % 3) * 12);
+
+                        const ty = player.y +
+                            Math.sin(angle) * (48 + (index % 3) * 12);
+
+                        const dx = tx - person.x;
+                        const dy = ty - person.y;
+                        const length = Math.hypot(dx, dy);
+
+                        if (length > 5) {
+                            const step = Math.min(length, person.speed * dt);
+
+                            person.x += dx / length * step;
+                            person.y += dy / length * step;
+                        }
+                    } else {
+                        person.angle += rand(-0.6, 0.6) * dt;
+
+                        if (Math.random() < dt * 0.12) {
+                            const nx = person.x +
+                                Math.cos(person.angle) * person.speed * 0.35 * dt;
+
+                            const ny = person.y +
+                                Math.sin(person.angle) * person.speed * 0.35 * dt;
+
+                            if (
+                                walkable(nx, ny, 10) &&
+                                !inSafeZone({ x: nx, y: ny })
+                            ) {
+                                person.x = nx;
+                                person.y = ny;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function updateSurvival(dt) {
+                elapsed += dt;
+
+                if (!indoor) {
+                    worldTime = (worldTime + dt * 1.5) % (24 * 60);
+                }
+
+                if (elapsed - lastSurvivalTick >= 5) {
+                    const steps = Math.floor((elapsed - lastSurvivalTick) / 5);
+                    lastSurvivalTick += steps * 5;
+
+                    player.hunger = clamp(player.hunger - steps * 0.18, 0, 100);
+                    player.thirst = clamp(player.thirst - steps * 0.28, 0, 100);
+
+                    if (player.hunger <= 0) player.health -= steps * 0.7;
+                    if (player.thirst <= 0) player.health -= steps * 1.2;
+
+                    if (player.health <= 0) die();
+                }
+
+                attackCooldown = Math.max(0, attackCooldown - dt);
+                shootCooldown = Math.max(0, shootCooldown - dt);
+                messageTimer = Math.max(0, messageTimer - dt);
+                damageFlash = Math.max(0, damageFlash - dt);
+
+                for (const particle of particles) {
+                    particle.t -= dt;
+                }
+
+                particles = particles.filter(particle => particle.t > 0);
+            }
+
+            function die() {
+                if (runEnded) return;
+
+                runEnded = true;
+                player.health = 0;
+
+                saveGame();
+
+                $("death-title").textContent = "YOU DIED";
+                $("death-text").innerHTML =
+                    "Survival time: " +
+                    Math.floor(elapsed / 60) + "m " +
+                    Math.floor(elapsed % 60) + "s<br>" +
+                    "Zombies defeated: " + kills + "<br>" +
+                    "Survivors rescued: " + rescued + "<br><br>" +
+                    "<em>The dead inherited the world.</em>";
+
+                $("death-overlay").style.display = "flex";
+
+                closeInteraction();
+                closeModal();
+            }
+
+            function updateUI() {
+                for (const [name, value] of [
+                    ["health", player.health],
+                    ["hunger", player.hunger],
+                    ["thirst", player.thirst]
+                ]) {
+                    $(name + "-num").textContent =
+                        Math.max(0, Math.round(value));
+
+                    $(name + "-bar").style.width =
+                        clamp(value, 0, 100) + "%";
+                }
+
+                $("condition").textContent =
+                    player.health > 75 ? "Stable" :
+                    player.health > 40 ? "Injured" :
+                    player.health > 0 ? "Critical" : "Dead";
+
+                $("day").textContent =
+                    Math.floor(worldTime / (24 * 60)) + 1;
+
+                const minuteOfDay = Math.floor(worldTime % (24 * 60));
+
+                $("clock").textContent =
+                    String(Math.floor(minuteOfDay / 60)).padStart(2, "0") +
+                    ":" +
+                    String(minuteOfDay % 60).padStart(2, "0");
+
+                $("kills").textContent = kills;
+                $("rescued").textContent = rescued;
+
+                $("following").textContent = civilians.filter(person =>
+                    person.state === "following" && !person.delivered
+                ).length;
+
+                $("equipped-label").textContent =
+                    weapon === "pistol" ? "Pistol" : "Knife";
+
+                $("weapon-hud").textContent =
+                    weapon === "pistol"
+                        ? "PISTOL · " + inventory.ammo + " ROUNDS"
+                        : "KNIFE · MELEE";
+
+                $("enemy-hud").textContent =
+                    "HOSTILES: " +
+                    (indoor ? roomZombies : zombies).filter(zombie =>
+                        distance(zombie, player) < 300
+                    ).length;
+
+                $("bandage-button").textContent =
+                    "B · BANDAGE (" + inventory.bandage + ")";
+
+                $("weapon1-button").classList.toggle(
+                    "active",
+                    weapon === "pistol"
+                );
+
+                $("weapon2-button").classList.toggle(
+                    "active",
+                    weapon === "melee"
+                );
+
+                const preview = $("inventory-preview");
+                preview.replaceChildren();
+
+                for (const item of [
+                    "food", "water", "bandage", "ammo", "medicine", "knife"
+                ]) {
+                    if (!inventory[item]) continue;
+
+                    const card = document.createElement("div");
+                    card.className = "item";
+
+                    const name = document.createElement("div");
+                    name.className = "item-name";
+                    name.textContent = itemIcons[item] + " " + itemNames[item];
+
+                    const count = document.createElement("div");
+                    count.className = "item-count";
+                    count.textContent = "× " + inventory[item];
+
+                    card.append(name, count);
+                    preview.appendChild(card);
+                }
+
+                if (!preview.children.length) {
+                    preview.textContent = "No supplies carried.";
+                }
+            }
+
+            function drawGround() {
+                ctx.fillStyle = indoor ? "#555e56" : "#536d4d";
+                ctx.fillRect(
+                    0,
+                    0,
+                    indoor ? VIEW_W : WORLD_W,
+                    indoor ? VIEW_H : WORLD_H
+                );
+
+                if (indoor) {
+                    ctx.fillStyle = "#8d9285";
+                    ctx.fillRect(35, 35, VIEW_W - 70, VIEW_H - 70);
+
+                    ctx.strokeStyle = "#7c8276";
+                    ctx.lineWidth = 1;
+
+                    for (let x = 35; x < VIEW_W - 35; x += TILE) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, 35);
+                        ctx.lineTo(x, VIEW_H - 35);
+                        ctx.stroke();
+                    }
+
+                    for (let y = 35; y < VIEW_H - 35; y += TILE) {
+                        ctx.beginPath();
+                        ctx.moveTo(35, y);
+                        ctx.lineTo(VIEW_W - 35, y);
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = "#a4aa9d";
+                    ctx.fillRect(370, 520, 160, 40);
+
+                    ctx.fillStyle = "#28362c";
+                    ctx.fillRect(380, 525, 140, 25);
+
+                    ctx.fillStyle = "#e8eee4";
+                    ctx.font = "bold 12px Arial";
+                    ctx.textAlign = "center";
+                    ctx.fillText("EXIT · E", 450, 542);
+                    ctx.textAlign = "left";
+
+                    drawFurniture();
+                    return;
+                }
+
+                ctx.fillStyle = "#999b8e";
+                ctx.fillRect(0, 480, WORLD_W, 100);
+                ctx.fillRect(730, 0, 85, WORLD_H);
+                ctx.fillRect(0, 940, WORLD_W, 60);
+                ctx.fillRect(0, 1420, WORLD_W, 55);
+
+                ctx.strokeStyle = "#d8d3b8";
+                ctx.lineWidth = 3;
+                ctx.setLineDash([24, 24]);
+
+                ctx.beginPath();
+                ctx.moveTo(0, 530);
+                ctx.lineTo(WORLD_W, 530);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(770, 0);
+                ctx.lineTo(770, WORLD_H);
+                ctx.stroke();
+
+                ctx.setLineDash([]);
+
+                for (const grass of grassPatches) {
+                    ctx.fillStyle = [
+                        "#607b52",
+                        "#5a734c",
+                        "#6b8059"
+                    ][grass.shade];
+
+                    ctx.beginPath();
+                    ctx.arc(grass.x, grass.y, grass.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = "#29a65c";
+                ctx.globalAlpha = 0.2;
+
+                ctx.fillRect(
+                    safeZone.x,
+                    safeZone.y,
+                    safeZone.w,
+                    safeZone.h
+                );
+
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = "#76ff9c";
+                ctx.lineWidth = 5;
+
+                ctx.strokeRect(
+                    safeZone.x,
+                    safeZone.y,
+                    safeZone.w,
+                    safeZone.h
+                );
+
+                ctx.fillStyle = "#e0ffe8";
+                ctx.font = "bold 18px Arial";
+                ctx.fillText(
+                    "SAFE ZONE",
+                    safeZone.x + 105,
+                    safeZone.y + 25
+                );
+
+                for (const building of buildings) {
+                    drawBuilding(building);
+                }
+            }
+
+            function drawBuilding(building) {
+                ctx.fillStyle = "#1d2924";
+
+                ctx.fillRect(
+                    building.x + 7,
+                    building.y + 9,
+                    building.w,
+                    building.h
+                );
+
+                ctx.fillStyle =
+                    building.type === "military" ? "#727f65" :
+                    building.type === "medical" ? "#c1d1d4" :
+                    building.type === "shop" ? "#b5a071" :
+                    "#a99f87";
+
+                ctx.fillRect(
+                    building.x,
+                    building.y,
+                    building.w,
+                    building.h
+                );
+
+                ctx.fillStyle = "#5b6357";
+
+                ctx.fillRect(
+                    building.x - 4,
+                    building.y - 5,
+                    building.w + 8,
+                    15
+                );
+
+                ctx.fillStyle = "#343f3a";
+
+                for (
+                    let x = building.x + 12;
+                    x < building.x + building.w - 10;
+                    x += 40
+                ) {
+                    ctx.fillRect(x, building.y + 25, 20, 17);
+                }
+
+                ctx.fillStyle = "#27342b";
+
+                ctx.fillRect(
+                    building.x + building.w / 2 - 15,
+                    building.y + building.h - 4,
+                    30,
+                    8
+                );
+
+                ctx.fillStyle = "#f2f3e8";
+                ctx.font = "bold 12px Arial";
+                ctx.textAlign = "center";
+
+                ctx.fillText(
+                    building.name,
+                    building.x + building.w / 2,
+                    building.y + building.h + 22
+                );
+
+                ctx.textAlign = "left";
+            }
+
+            function drawFurniture() {
+                if (!currentBuilding) return;
+
+                const furniture = [];
+
+                if (currentBuilding.type === "home") {
+                    furniture.push(
+                        [100, 100, 150, 75, "#69503e", "BED"],
+                        [600, 105, 100, 60, "#6d5943", "TABLE"],
+                        [110, 240, 90, 45, "#8e795a", "SOFA"],
+                        [590, 250, 110, 65, "#73654e", "CUPBOARD"]
+                    );
+                } else if (currentBuilding.type === "shop") {
+                    for (let y = 100; y < 430; y += 100) {
+                        furniture.push(
+                            [100, y, 100, 45, "#826d4e", "SHELVES"],
+                            [690, y, 100, 45, "#826d4e", "SHELVES"]
+                        );
+                    }
+
+                    furniture.push(
+                        [330, 130, 220, 60, "#725a42", "COUNTER"]
+                    );
+                } else if (currentBuilding.type === "medical") {
+                    furniture.push(
+                        [100, 100, 150, 65, "#b2c4c5", "BED"],
+                        [600, 100, 150, 65, "#b2c4c5", "BED"],
+                        [120, 250, 100, 65, "#7b846e", "CABINET"],
+                        [620, 250, 100, 65, "#7b846e", "CABINET"]
+                    );
+                } else {
+                    furniture.push(
+                        [110, 100, 140, 80, "#555e4b", "LOCKERS"],
+                        [620, 100, 140, 80, "#555e4b", "LOCKERS"],
+                        [320, 270, 230, 75, "#73684f", "SUPPLIES"]
+                    );
+                }
+
+                for (const [x, y, w, h, color, label] of furniture) {
+                    ctx.fillStyle = "#343b35";
+                    ctx.fillRect(x + 4, y + 5, w, h);
+
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, y, w, h);
+
+                    ctx.strokeStyle = "#343b35";
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x, y, w, h);
+
+                    ctx.fillStyle = "#edf0e6";
+                    ctx.font = "10px Arial";
+                    ctx.fillText(label, x + 5, y + 14);
+                }
+
+                for (const object of lootObjects.filter(item =>
+                    item.buildingId === currentBuilding.id &&
+                    !item.searched
+                )) {
+                    const point = interiorPos(object);
+
+                    ctx.fillStyle = "#b68d54";
+                    ctx.fillRect(point.x - 12, point.y - 11, 24, 22);
+
+                    ctx.strokeStyle = "#493b2b";
+                    ctx.strokeRect(point.x - 12, point.y - 11, 24, 22);
+
+                    ctx.fillStyle = "#fff2d8";
+                    ctx.font = "bold 11px Arial";
+                    ctx.fillText("?", point.x - 4, point.y + 4);
+                }
+            }
+
+            function drawZombie(zombie) {
+                ctx.save();
+                ctx.translate(zombie.x, zombie.y);
+
+                ctx.fillStyle = "#1c2a23";
+                ctx.beginPath();
+                ctx.arc(0, 0, zombie.r + 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle =
+                    zombie.state === "chase" ? "#c94b46" : "#72866d";
+
+                ctx.beginPath();
+                ctx.arc(0, 0, zombie.r, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#ffe1b8";
+                ctx.fillRect(-6, -4, 4, 3);
+                ctx.fillRect(3, -4, 4, 3);
+
+                ctx.strokeStyle = "#313b31";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(-5, 8);
+                ctx.lineTo(-11, 17);
+                ctx.moveTo(5, 8);
+                ctx.lineTo(11, 16);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            function drawCivilian(person) {
+                if (person.delivered) return;
+
+                ctx.save();
+                ctx.translate(person.x, person.y);
+
+                ctx.fillStyle =
+                    person.state === "following" ? "#d7a744" : "#4fbcd4";
+
+                ctx.beginPath();
+                ctx.arc(0, 0, person.r + 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#d8d9c8";
+                ctx.beginPath();
+                ctx.arc(0, -4, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle =
+                    person.state === "following" ? "#b48b43" : "#4b7780";
+
+                ctx.fillRect(-8, 2, 16, 12);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "10px Arial";
+                ctx.textAlign = "center";
+
+                ctx.fillText(
+                    person.state === "following" ? "FOLLOWING" : person.name,
+                    0,
+                    -19
+                );
+
+                ctx.restore();
+            }
+
+            function drawPlayer() {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+
+                ctx.fillStyle = "#172019";
+                ctx.beginPath();
+                ctx.arc(0, 0, player.r + 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#d2d7c3";
+                ctx.beginPath();
+                ctx.arc(0, 0, player.r, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#496d47";
+                ctx.fillRect(-9, -4, 18, 17);
+
+                ctx.fillStyle = "#e0cdb0";
+                ctx.beginPath();
+                ctx.arc(0, -8, 7, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle =
+                    weapon === "pistol" ? "#242d32" : "#d5d9c7";
+
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(
+                    player.facingX * 20,
+                    player.facingY * 20
+                );
+                ctx.stroke();
+
+                if (flashlight) {
+                    ctx.globalAlpha = 0.13;
+                    ctx.fillStyle = "#fff1ad";
+
+                    const angle = Math.atan2(
+                        player.facingY,
+                        player.facingX
+                    );
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, 230, angle - 0.4, angle + 0.4);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
+            function drawParticles() {
+                for (const particle of particles) {
+                    const fraction = particle.t / (particle.max || 0.2);
+
+                    ctx.save();
+
+                    if (particle.kind === "tracer") {
+                        ctx.globalAlpha = Math.min(1, fraction);
+                        ctx.strokeStyle = particle.color;
+                        ctx.lineWidth = 3;
+                        ctx.shadowColor = particle.color;
+                        ctx.shadowBlur = 10;
+
+                        ctx.beginPath();
+                        ctx.moveTo(particle.x1, particle.y1);
+                        ctx.lineTo(particle.x2, particle.y2);
+                        ctx.stroke();
+                    } else if (particle.kind === "muzzle") {
+                        ctx.globalAlpha = Math.min(1, fraction);
+                        ctx.fillStyle = particle.color;
+
+                        ctx.beginPath();
+                        ctx.arc(
+                            particle.x,
+                            particle.y,
+                            7,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                    } else {
+                        ctx.globalAlpha = Math.min(1, fraction);
+                        ctx.fillStyle = particle.color;
+
+                        ctx.beginPath();
+                        ctx.arc(
+                            particle.x,
+                            particle.y,
+                            10 * (1 - fraction) + 3,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                    }
+
+                    ctx.restore();
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, VIEW_W, VIEW_H);
+
+                if (indoor) {
+                    drawGround();
+
+                    for (const zombie of roomZombies) {
+                        drawZombie(zombie);
+                    }
+
+                    drawPlayer();
+                    drawParticles();
+                } else {
+                    camX = clamp(
+                        player.x - VIEW_W / 2,
+                        0,
+                        WORLD_W - VIEW_W
+                    );
+
+                    camY = clamp(
+                        player.y - VIEW_H / 2,
+                        0,
+                        WORLD_H - VIEW_H
+                    );
+
+                    ctx.save();
+                    ctx.translate(-camX, -camY);
+
+                    drawGround();
+
+                    for (const object of lootObjects.filter(item =>
+                        !item.buildingId && !item.searched
+                    )) {
+                        ctx.fillStyle = "#bba270";
+                        ctx.fillRect(object.x - 8, object.y - 8, 16, 16);
+
+                        ctx.strokeStyle = "#333b2f";
+                        ctx.strokeRect(object.x - 8, object.y - 8, 16, 16);
+                    }
+
+                    for (const person of civilians) {
+                        drawCivilian(person);
+                    }
+
+                    for (const zombie of zombies) {
+                        drawZombie(zombie);
+                    }
+
+                    drawPlayer();
+                    drawParticles();
+
+                    ctx.restore();
+
+                    const hour = worldTime / 60;
+
+                    const darkness =
+                        hour < 6 || hour > 19 ? 0.42 :
+                        hour < 8 ? 0.18 :
+                        hour > 17 ? 0.2 : 0;
+
+                    if (darkness) {
+                        ctx.fillStyle = "rgba(10, 18, 29, " + darkness + ")";
+                        ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+                    }
+                }
+
+                if (crouching) {
+                    ctx.fillStyle = "#101820dc";
+                    ctx.fillRect(10, 52, 110, 25);
+
+                    ctx.fillStyle = "#eaf1e7";
+                    ctx.font = "bold 12px Arial";
+                    ctx.fillText("CROUCHING", 18, 69);
+                }
+
+                if (damageFlash > 0) {
+                    ctx.fillStyle =
+                        "rgba(210, 48, 45, " + damageFlash * 1.3 + ")";
+
+                    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+                }
+
+                if (messageTimer <= 0) {
+                    $("game-message").textContent = indoor
+                        ? "WASD to move · E near containers to search · E at exit"
+                        : "WASD to move · E to interact/recruit · M for map";
+                }
+            }
+
+            function saveGame() {
+                try {
+                    const data = {
+                        player,
+                        inventory,
+                        worldTime,
+                        elapsed,
+                        kills,
+                        rescued,
+                        indoor,
+                        currentBuildingId: currentBuilding?.id || null,
+                        buildings,
+                        zombies,
+                        civilians,
+                        roomZombies,
+                        lootObjects,
+                        discovered: Array.from(discovered),
+                        crouching,
+                        flashlight,
+                        weapon
+                    };
+
+                    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+                } catch (error) {
+                    console.warn("Save unavailable:", error);
+                }
+            }
+
+            function restoreGame() {
+                try {
+                    const raw = localStorage.getItem(SAVE_KEY);
+
+                    if (!raw) return false;
+
+                    const data = JSON.parse(raw);
+
+                    if (
+                        !data ||
+                        !data.player ||
+                        !data.inventory ||
+                        !Array.isArray(data.buildings) ||
+                        !Array.isArray(data.zombies)
+                    ) {
+                        return false;
+                    }
+
+                    player = data.player;
+                    inventory = data.inventory;
+                    worldTime = data.worldTime ?? 480;
+                    elapsed = data.elapsed || 0;
+                    kills = data.kills || 0;
+                    rescued = data.rescued || 0;
+                    indoor = !!data.indoor;
+
+                    discovered = new Set(data.discovered || ["home"]);
+                    crouching = !!data.crouching;
+                    flashlight = !!data.flashlight;
+                    weapon = data.weapon || "pistol";
+
+                    buildings = data.buildings;
+                    zombies = data.zombies;
+                    civilians = Array.isArray(data.civilians)
+                        ? data.civilians
+                        : [];
+
+                    roomZombies = Array.isArray(data.roomZombies)
+                        ? data.roomZombies
+                        : [];
+
+                    lootObjects = Array.isArray(data.lootObjects)
+                        ? data.lootObjects
+                        : [];
+
+                    currentBuilding = buildings.find(building =>
+                        building.id === data.currentBuildingId
+                    ) || null;
+
+                    particles = [];
+                    grassPatches = [];
+
+                    for (let i = 0; i < 500; i++) {
+                        grassPatches.push({
+                            x: (i * 173 + 37) % WORLD_W,
+                            y: (i * 271 + 61) % WORLD_H,
+                            r: rand(4, 12),
+                            shade: i % 3
+                        });
+                    }
+
+                    runEnded = false;
+                    lootTarget = null;
+                    keys.clear();
+
+                    $("area-title").textContent =
+                        indoor && currentBuilding
+                            ? currentBuilding.name.toUpperCase()
+                            : "RESIDENTIAL DISTRICT";
+
+                    $("location-tag").textContent =
+                        indoor ? "INDOORS" : "OUTDOORS";
+
+                    $("location").textContent =
+                        indoor ? "Indoors" : "Street";
+
+                    $("flash-button").textContent =
+                        "L · FLASHLIGHT: " + (flashlight ? "ON" : "OFF");
+
+                    $("death-overlay").style.display = "none";
+
+                    updateUI();
+                    return true;
+                } catch (error) {
+                    console.warn("Save could not be restored:", error);
+                    return false;
+                }
+            }
+
+            function loop(timestamp) {
+                try {
+                    if (!lastFrame) lastFrame = timestamp;
+
+                    const dt = Math.min(
+                        (timestamp - lastFrame) / 1000,
+                        0.05
+                    );
+
+                    lastFrame = timestamp;
+
+                    if (!runEnded) {
+                        if (!lootTarget && !modalType) {
+                            updatePlayer(dt);
+
+                            if (indoor) {
+                                updateZombies(dt, roomZombies);
+                            } else {
+                                updateZombies(dt, zombies);
+                                updateCivilians(dt);
+                            }
+                        }
+
+                        updateSurvival(dt);
+
+                        if (elapsed - lastAutoSave > 8) {
+                            lastAutoSave = elapsed;
+                            saveGame();
+                        }
+
+                        updateUI();
+                    }
+
+                    draw();
+                } catch (error) {
+                    showError(error);
+                    return;
+                }
+
+                requestAnimationFrame(loop);
+            }
+
+            function openWorldMap() {
+                if (modalType === "map") {
+                    closeModal();
+                } else {
+                    openModal("map");
+                }
+            }
+
+            function keydown(event) {
+                const key = event.key.toLowerCase();
+
+                if (
+                    ["arrowup", "arrowdown", "arrowleft", "arrowright", " "]
+                        .includes(key)
+                ) {
+                    event.preventDefault();
+                }
+
+                if (
+                    event.repeat &&
+                    ["e", " ", "f", "c", "l", "g", "b", "m", "1", "2", "escape"]
+                        .includes(key)
+                ) {
+                    return;
+                }
+
+                if (key === "escape") {
+                    if (modalType) {
+                        closeModal();
+                    } else if (lootTarget) {
+                        closeInteraction();
+                    }
+
+                    return;
+                }
+
+                if (key === "e") interact();
+                if (key === " ") melee();
+                if (key === "f") shoot();
+                if (key === "c") toggleCrouch();
+                if (key === "l") toggleFlashlight();
+                if (key === "g") toggleBackpack();
+                if (key === "b") bandage();
+
+                if (key === "m") openWorldMap();
+                if (key === "1") equipWeapon("pistol");
+                if (key === "2") equipWeapon("melee");
+
+                keys.add(key);
+            }
+
+            function keyup(event) {
+                keys.delete(event.key.toLowerCase());
+            }
+
+            window.addEventListener("keydown", keydown);
+            window.addEventListener("keyup", keyup);
+            window.addEventListener("blur", () => keys.clear());
+
+            canvas.addEventListener("pointermove", event => {
+                updateAimFromScreen(event.clientX, event.clientY);
+            });
+
+            canvas.addEventListener("pointerdown", event => {
+                if (
+                    event.button !== 0 ||
+                    runEnded ||
+                    modalType ||
+                    lootTarget
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                updateAimFromScreen(event.clientX, event.clientY);
+
+                if (weapon === "pistol") {
+                    shoot();
+                } else {
+                    melee();
+                }
+            });
+
+            canvas.addEventListener("contextmenu", event => {
+                event.preventDefault();
+            });
+
+            $("use-button").addEventListener("click", interact);
+            $("weapon1-button").addEventListener("click", () => equipWeapon("pistol"));
+            $("weapon2-button").addEventListener("click", () => equipWeapon("melee"));
+            $("crouch-button").addEventListener("click", toggleCrouch);
+            $("flash-button").addEventListener("click", toggleFlashlight);
+            $("bandage-button").addEventListener("click", bandage);
+            $("eat-button").addEventListener("click", eatFood);
+            $("drink-button").addEventListener("click", drinkWater);
+
+            $("close-interaction").addEventListener("click", closeInteraction);
+
+            $("backpack-button").addEventListener("click", toggleBackpack);
+            $("open-bag-small").addEventListener("click", toggleBackpack);
+            $("map-button").addEventListener("click", openWorldMap);
+
+            $("tutorial-button").addEventListener("click", () => {
+                openModal("tutorial");
+            });
+
+            $("modal-close").addEventListener("click", closeModal);
+
+            $("modal-layer").addEventListener("pointerdown", event => {
+                if (event.target === $("modal-layer")) {
+                    closeModal();
+                }
+            });
+
+            $("restart-button").addEventListener("click", () => {
+                try {
+                    localStorage.removeItem(SAVE_KEY);
+                } catch (error) {
+                    console.warn("Could not clear save:", error);
+                }
+
+                resetRun();
+            });
+
+            $("continue-button").addEventListener("click", () => {
+                if (!restoreGame()) {
+                    notify("No usable saved run found.");
+                }
+            });
+
+            $("touch-interact").addEventListener("click", interact);
+            $("touch-attack").addEventListener("click", melee);
+            $("touch-shoot").addEventListener("click", shoot);
+            $("touch-backpack").addEventListener("click", toggleBackpack);
+            $("touch-bandage").addEventListener("click", bandage);
+            $("touch-crouch").addEventListener("click", toggleCrouch);
+
+            document.querySelectorAll("[data-move]").forEach(button => {
+                const keyMap = {
+                    up: "w",
+                    down: "s",
+                    left: "a",
+                    right: "d"
+                };
+
+                const key = keyMap[button.dataset.move];
+
+                const down = event => {
+                    event.preventDefault();
+                    keys.add(key);
+                };
+
+                const up = event => {
+                    event.preventDefault();
+                    keys.delete(key);
+                };
+
+                button.addEventListener("pointerdown", down);
+                button.addEventListener("pointerup", up);
+                button.addEventListener("pointerleave", up);
+                button.addEventListener("pointercancel", up);
+            });
+
+            async function toggleFullscreen() {
+                try {
+                    if (!document.fullscreenElement) {
+                        await $("game-frame").requestFullscreen();
+                    } else {
+                        await document.exitFullscreen();
+                    }
+                } catch (error) {
+                    notify("Fullscreen unavailable in this browser.");
+                }
+            }
+
+            $("fullscreen-button").addEventListener("click", toggleFullscreen);
+
+            $("leave-fullscreen-button").addEventListener("click", () => {
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                }
+            });
+
+            document.addEventListener("fullscreenchange", () => {
+                const fullscreen = !!document.fullscreenElement;
+
+                $("fullscreen-button").textContent = fullscreen
+                    ? "⛶ EXIT FULLSCREEN"
+                    : "⛶ FULLSCREEN";
+
+                $("fullscreen-hint").style.display =
+                    fullscreen ? "block" : "none";
+            });
+
+            window.addEventListener("beforeunload", saveGame);
+
+            try {
+                if (!restoreGame()) {
+                    resetRun();
+                }
+
+                requestAnimationFrame(loop);
+            } catch (error) {
+                showError(error);
+            }
+        })();
+    </script>
+</body>
+</html>
